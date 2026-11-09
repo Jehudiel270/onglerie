@@ -1,0 +1,4 @@
+<script setup lang="ts">
+const sections=[{title:'Éditeur du site',body:'À compléter : dénomination, identité de l’exploitant, forme juridique éventuelle, adresse et moyen de contact.'},{title:'Hébergement et services',body:'À compléter avec l’hébergeur effectivement retenu en production et les coordonnées nécessaires.'},{title:'Contenus et images',body:'Les visuels de l’aperçu du site peuvent être des créations éditoriales générées et ne sont pas des réalisations du salon. Les médias réels doivent être publiés par une personne autorisée.'},{title:'Mise à jour',body:'Renseignez la date de mise à jour et faites vérifier les obligations applicables avant publication.'}]
+</script>
+<template><LegalNotice eyebrow="Informations sur le site" title="Mentions légales" intro="Les informations d’identification de l’éditeur et de l’hébergeur doivent être ajoutées avant la mise en production." :sections="sections"/></template>

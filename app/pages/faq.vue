@@ -1,0 +1,15 @@
+<script setup lang="ts">
+import { ChevronDown, HelpCircle } from '@lucide/vue'
+const {data:content}=await useFetch<{faq?:Array<{question?:string;answer?:string;category?:string}>;demo?:boolean}>('/api/public/content',{key:'salon-public-content'})
+const openIndex=ref(0)
+const groups=computed(()=>{const items=content.value?.faq??[];return items.reduce<Record<string,NonNullable<typeof content.value>['faq']>>((acc,item)=>{const group=item.category||'Questions fréquentes';(acc[group]??=[]).push(item);return acc},{})})
+const title='FAQ — Réservations, prestations & entretien'
+const description='Questions fréquentes vérifiées sur la prise de rendez-vous, les paiements, les acomptes et les prestations.'
+useSeoMeta({title,description,ogTitle:title,ogDescription:description,ogType:'website',twitterCard:'summary'})
+</script>
+
+<template><div><PageIntro eyebrow="Questions fréquentes" title="Quelques réponses, sans détour." description="Les réponses publiées sont configurées par le salon. Pour une situation particulière, contactez directement l’équipe."/><section class="container-narrow faq-main"><div v-if="content?.demo" class="demo-note">Questions de démonstration non configurées : aucune règle d’annulation, de retard ou de paiement n’est inventée.</div><div v-if="Object.keys(groups).length" class="faq-groups"><section v-for="(items,group) in groups" :key="group"><h2>{{group}}</h2><article v-for="(item,index) in items" :key="item.question" class="faq-item"><button type="button" :aria-expanded="openIndex===index" @click="openIndex=openIndex===index?-1:index"><span><HelpCircle :size="16"/>{{item.question}}</span><ChevronDown :size="17"/></button><p v-if="openIndex===index">{{item.answer}}</p></article></section></div><div v-else class="faq-empty"><HelpCircle :size="26"/><strong>Les réponses seront publiées par le salon.</strong><p>En attendant, l’équipe peut répondre à une question depuis la page contact.</p><NuxtLink class="btn btn-secondary" to="/contact">Contacter le salon</NuxtLink></div></section></div></template>
+
+<style scoped>
+.faq-main{padding-bottom:2rem}.faq-groups{display:grid;gap:2rem}.faq-groups h2{font-family:var(--font-display);font-size:1.8rem;font-weight:600}.faq-item{border-top:1px solid var(--line)}.faq-item:last-child{border-bottom:1px solid var(--line)}.faq-item button{display:flex;width:100%;min-height:62px;align-items:center;justify-content:space-between;gap:.8rem;border:0;padding:.8rem 0;color:var(--ink);background:transparent;text-align:left;font-size:.82rem;font-weight:700;cursor:pointer}.faq-item button>span{display:flex;align-items:center;gap:.6rem}.faq-item button svg{color:var(--merlot)}.faq-item p{max-width:680px;margin:0 0 1rem 1.6rem;color:var(--muted);font-size:.78rem}.faq-empty{display:grid;justify-items:center;gap:.7rem;border:1px dashed var(--line);border-radius:1rem;padding:2.5rem;text-align:center}.faq-empty svg{color:var(--merlot)}.faq-empty strong{font-family:var(--font-display);font-size:1.6rem}.faq-empty p{color:var(--muted);font-size:.78rem}
+</style>

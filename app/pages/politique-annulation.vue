@@ -1,0 +1,4 @@
+<script setup lang="ts">
+const sections=[{title:'Demander un changement ou une annulation',body:'Le délai et le moyen de demande doivent être configurés par le salon. Une demande transmise via le compte client ne vaut pas automatiquement acceptation.'},{title:'Acompte et remboursement',body:'Le traitement d’un acompte dépend des conditions réelles de réservation et des règles applicables. Aucun montant de retenue ou remboursement n’est supposé dans ce texte.'},{title:'Retard ou absence',body:'Le salon doit définir ses règles concernant les retards, l’absence et l’impact éventuel sur le rendez-vous.'},{title:'Contact',body:'Consultez les coordonnées confirmées sur la page Contact pour joindre l’équipe au sujet d’une demande.'}]
+</script>
+<template><LegalNotice eyebrow="Rendez-vous & changements" title="Politique d’annulation" intro="Les délais, règles d’acompte et procédures seront publiés après validation par la propriétaire." :sections="sections"/></template>
