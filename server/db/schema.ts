@@ -138,6 +138,12 @@ export const paymentWebhookEvents = pgTable('payment_webhook_events', {
 export const salonSettings = pgTable('salon_settings', {
   id: uuid('id').defaultRandom().primaryKey(), salonId: uuid('salon_id').notNull().references(() => salons.id, { onDelete: 'cascade' }).unique(), settings: jsonb('settings').$type<Record<string, unknown>>().default(sql`'{}'::jsonb`).notNull(), createdAt: createdAt(), updatedAt: updatedAt(),
 })
+// Configuration plateforme (clés d'intégration) : repli éditable depuis le
+// panneau développement. Une variable d'environnement du même nom reste
+// prioritaire ; les valeurs ne sont jamais renvoyées en clair par l'API.
+export const platformConfig = pgTable('platform_config', {
+  key: text('key').primaryKey(), value: text('value').notNull(), updatedAt: updatedAt(),
+})
 export const siteContent = pgTable('site_content', {
   id: uuid('id').defaultRandom().primaryKey(), salonId: uuid('salon_id').notNull().references(() => salons.id, { onDelete: 'cascade' }), contentKey: text('content_key').notNull(), content: jsonb('content').$type<Record<string, unknown>>().notNull(), updatedAt: updatedAt(),
 }, (table) => [uniqueIndex('site_content_key_unique').on(table.salonId, table.contentKey)])

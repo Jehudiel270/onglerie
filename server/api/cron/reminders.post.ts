@@ -1,14 +1,14 @@
-import { env } from 'node:process'
 import { and, eq, gte, lt } from 'drizzle-orm'
 import { createError, defineEventHandler, getHeader } from 'h3'
 import { formatInTimeZone } from 'date-fns-tz'
 import { getDatabase } from '../../db/client'
 import { appointments, customers, notificationOutbox, salons } from '../../db/schema'
 import { getSalonBookingSettings } from '../../services/salon-settings'
+import { verifyCronToken } from '../../services/platform-config'
 
 export default defineEventHandler(async (event) => {
   const token = getHeader(event, 'authorization')?.replace(/^Bearer\s+/i, '') || getHeader(event, 'x-cron-secret')
-  if (!env.CRON_SECRET || token !== env.CRON_SECRET) throw createError({ statusCode: 401, statusMessage: 'Tâche planifiée non autorisée.' })
+  await verifyCronToken(token || '')
 
   const db = getDatabase()
   const current = new Date()

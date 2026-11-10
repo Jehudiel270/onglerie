@@ -15,7 +15,7 @@ export default defineEventHandler(async(event)=>{
   if(!hasNeonDatabase())throw createError({statusCode:503,statusMessage:'Les réservations restent désactivées tant que la base Neon du salon n’est pas configurée.'})
   const booking=await createBooking(parsed.data,getRequestIP(event,{xForwardedFor:true})||undefined)
   if(booking.depositDueXof===0)return{ok:true,booking:{id:booking.bookingId,reference:booking.reference,status:booking.status,startsAt:booking.startsAt,endsAt:booking.endsAt,staffName:booking.staffName,totalXof:booking.totalXof,depositDueXof:0,amountPaidXof:0,remainingXof:booking.totalXof,guestAccessToken:booking.guestAccessToken}}
-  if(!isFedaPayConfigured()){
+  if(!(await isFedaPayConfigured())){
     await releaseBookingHold(booking.bookingId,'FedaPay n’est pas configuré : libération de la retenue sans confirmer la réservation.')
     throw createError({statusCode:503,statusMessage:'Un acompte est requis mais FedaPay n’est pas configuré. La retenue temporaire a été libérée, aucun paiement ni rendez-vous confirmé.'})
   }

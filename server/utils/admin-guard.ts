@@ -6,6 +6,21 @@ import { type SalonRole } from '../../shared/constants/rbac'
 
 export type { SalonRole }
 
+// Résout le salon cible d'un compte développeur : salon demandé via l'en-tête
+// x-salon-id, sinon premier salon actif, sinon premier salon tout statut.
+export async function resolveDevSalonId(db: ReturnType<typeof getDatabase>, requestedSalonId: string): Promise<string> {
+  if (requestedSalonId) {
+    const [requested] = await db.select({ id: salons.id }).from(salons).where(eq(salons.id, requestedSalonId)).limit(1)
+    if (!requested) throw createError({ statusCode: 404, statusMessage: 'Salon demandé introuvable.' })
+    return requested.id
+  }
+  const [active] = await db.select({ id: salons.id }).from(salons).where(eq(salons.status, 'active')).orderBy(asc(salons.createdAt)).limit(1)
+  if (active) return active.id
+  const [any] = await db.select({ id: salons.id }).from(salons).orderBy(asc(salons.createdAt)).limit(1)
+  if (!any) throw createError({ statusCode: 404, statusMessage: 'Aucun salon enregistré sur la plateforme.' })
+  return any.id
+}
+
 export async function requireSalonRole(event: H3Event, allowedRoles: SalonRole[] = ['owner', 'reception']) {
   const auth = serverAuth(event)
   const session = await auth.api.getSession({ headers: event.headers })
@@ -21,20 +36,7 @@ export async function requireSalonRole(event: H3Event, allowedRoles: SalonRole[]
   // contourne les adhésions et agit sur le salon demandé (en-tête x-salon-id)
   // ou sur le premier salon actif de la plateforme.
   if ((session.user as { role?: string }).role === 'dev') {
-    let salonId = ''
-    if (requestedSalonId) {
-      const [requested] = await db.select({ id: salons.id }).from(salons).where(eq(salons.id, requestedSalonId)).limit(1)
-      if (!requested) throw createError({ statusCode: 404, statusMessage: 'Salon demandé introuvable.' })
-      salonId = requested.id
-    } else {
-      const [active] = await db.select({ id: salons.id }).from(salons).where(eq(salons.status, 'active')).orderBy(asc(salons.createdAt)).limit(1)
-      if (active) salonId = active.id
-      else {
-        const [any] = await db.select({ id: salons.id }).from(salons).orderBy(asc(salons.createdAt)).limit(1)
-        if (!any) throw createError({ statusCode: 404, statusMessage: 'Aucun salon enregistré sur la plateforme.' })
-        salonId = any.id
-      }
-    }
+    const salonId = await resolveDevSalonId(db, requestedSalonId)
     return { db, user: session.user, salonId, role: 'dev' as SalonRole }
   }
 

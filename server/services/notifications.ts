@@ -2,6 +2,7 @@ import { env } from 'node:process'
 import { and, eq, gte, inArray, lte, or, lt, sql } from 'drizzle-orm'
 import { getDatabase } from '../db/client'
 import { guestRecoveryChallenges, notificationLogs, notificationOutbox } from '../db/schema'
+import { getPlatformSetting } from './platform-config'
 
 type OutboxRow = typeof notificationOutbox.$inferSelect
 const text = (value: unknown): string => typeof value === 'string' ? value : ''
@@ -18,31 +19,39 @@ function messageFor(row: OutboxRow) {
   return { subject: `Rendez-vous ${reference} confirmé`, body: `Votre rendez-vous ${reference} est confirmé. Date : ${when}. Total : ${total} XOF. Acompte reçu : ${paid} XOF. Solde : ${balance} XOF.` }
 }
 async function sendEmail(row: OutboxRow) {
-  const from = env.EMAIL_FROM
+  // Priorité : variable d'environnement, sinon valeur du panneau dev (platform_config).
+  const brevoKey = (await getPlatformSetting('BREVO_API_KEY')).value
+  const from = (await getPlatformSetting('EMAIL_FROM')).value
   // Fournisseur prioritaire : Brevo (transactional). Le destinataire est un e-mail
   // ; l'expéditeur doit être validé dans le compte Brevo (expéditeurs & domaines).
-  if (env.BREVO_API_KEY && from) {
+  if (brevoKey && from) {
     const message = messageFor(row)
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': env.BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ sender: { email: from, name: env.EMAIL_FROM_NAME || 'Onglerie Carrel' }, to: [{ email: row.recipient }], subject: message.subject, textContent: message.body, htmlContent: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#2b2422">${safe(message.body).replace(/\n/g, '<br>')}</div>` }), signal: AbortSignal.timeout(20_000) })
+    const fromName = (await getPlatformSetting('EMAIL_FROM_NAME')).value || 'Onglerie Carrel'
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': brevoKey, 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ sender: { email: from, name: fromName }, to: [{ email: row.recipient }], subject: message.subject, textContent: message.body, htmlContent: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#2b2422">${safe(message.body).replace(/\n/g, '<br>')}</div>` }), signal: AbortSignal.timeout(20_000) })
     if (!response.ok) throw new Error(`Brevo a refusé l'e-mail (HTTP ${response.status}).`)
     return
   }
   // Repli : adaptateur HTTP générique (EMAIL_API_URL + clé + expéditeur).
-  if (!env.EMAIL_API_URL || !env.EMAIL_API_KEY || !env.EMAIL_FROM) throw new Error('Fournisseur e-mail non configuré (BREVO_API_KEY ou EMAIL_API_*).')
-  const destination = new URL(env.EMAIL_API_URL)
+  const apiUrl = (await getPlatformSetting('EMAIL_API_URL')).value
+  const apiKey = (await getPlatformSetting('EMAIL_API_KEY')).value
+  if (!apiUrl || !apiKey || !from) throw new Error('Fournisseur e-mail non configuré (BREVO_API_KEY ou EMAIL_API_*).')
+  const destination = new URL(apiUrl)
   if (destination.protocol !== 'https:' || destination.username || destination.password) throw new Error('EMAIL_API_URL doit être une URL HTTPS sans identifiants intégrés.')
   const message = messageFor(row)
-  const response = await fetch(destination, { method: 'POST', headers: { authorization: `Bearer ${env.EMAIL_API_KEY}`, 'content-type': 'application/json', 'idempotency-key': row.dedupeKey }, body: JSON.stringify({ from: env.EMAIL_FROM, to: row.recipient, subject: message.subject, text: message.body, html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${safe(message.body)}</pre>` }), signal: AbortSignal.timeout(20_000) })
+  const response = await fetch(destination, { method: 'POST', headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json', 'idempotency-key': row.dedupeKey }, body: JSON.stringify({ from, to: row.recipient, subject: message.subject, text: message.body, html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${safe(message.body)}</pre>` }), signal: AbortSignal.timeout(20_000) })
   if (!response.ok) throw new Error(`E-mail refusé par le fournisseur (HTTP ${response.status}).`)
 }
 async function sendWhatsApp(row: OutboxRow) {
-  if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) throw new Error('WhatsApp Business Cloud non configuré.')
+  const accessToken = (await getPlatformSetting('WHATSAPP_ACCESS_TOKEN')).value
+  const phoneNumberId = (await getPlatformSetting('WHATSAPP_PHONE_NUMBER_ID')).value
+  if (!accessToken || !phoneNumberId) throw new Error('WhatsApp Business Cloud non configuré.')
   const payload = row.payload
   const templateName = row.templateKey === 'contact_message' ? env.WHATSAPP_TEMPLATE_CONTACT_MESSAGE : row.templateKey === 'booking_reminder' ? env.WHATSAPP_TEMPLATE_BOOKING_REMINDER : row.templateKey === 'booking_payment_received' ? env.WHATSAPP_TEMPLATE_PAYMENT_RECEIVED : row.templateKey === 'payment_manual_review' ? env.WHATSAPP_TEMPLATE_PAYMENT_REVIEW : row.templateKey === 'booking_recovery_code' ? env.WHATSAPP_TEMPLATE_BOOKING_RECOVERY : env.WHATSAPP_TEMPLATE_BOOKING_CONFIRMED
   if (!templateName) throw new Error('Modèle WhatsApp approuvé correspondant non configuré.')
   const parameters = row.templateKey === 'booking_recovery_code' ? [text(payload.code), text(payload.expiresMinutes ?? '10')] : row.templateKey === 'contact_message' ? [text(payload.name), text(payload.phone) || text(payload.email), text(payload.message).slice(0, 900)] : row.templateKey === 'booking_payment_received' ? [text(payload.reference), Number(payload.paymentXof ?? 0).toLocaleString('fr-BJ'), Number(payload.depositPaidXof ?? 0).toLocaleString('fr-BJ'), Number(payload.remainingXof ?? 0).toLocaleString('fr-BJ')] : row.templateKey === 'payment_manual_review' ? [text(payload.reference), Number(payload.paymentXof ?? 0).toLocaleString('fr-BJ'), text(payload.currency), text(payload.reason)] : [text(payload.reference), text(payload.startsAt), Number(payload.totalXof ?? 0).toLocaleString('fr-BJ'), Number(payload.depositPaidXof ?? 0).toLocaleString('fr-BJ'), Number(payload.remainingXof ?? 0).toLocaleString('fr-BJ')]
-  const url = `https://graph.facebook.com/${env.WHATSAPP_API_VERSION || 'v22.0'}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`
-  const response = await fetch(url, { method: 'POST', headers: { authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`, 'content-type': 'application/json' }, body: JSON.stringify({ messaging_product: 'whatsapp', to: row.recipient.replace(/\D/g, ''), type: 'template', template: { name: templateName, language: { code: 'fr' }, components: [{ type: 'body', parameters: parameters.map((value) => ({ type: 'text', text: value })) }] } }), signal: AbortSignal.timeout(20_000) })
+  const apiVersion = (await getPlatformSetting('WHATSAPP_API_VERSION')).value || 'v22.0'
+  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`
+  const response = await fetch(url, { method: 'POST', headers: { authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' }, body: JSON.stringify({ messaging_product: 'whatsapp', to: row.recipient.replace(/\D/g, ''), type: 'template', template: { name: templateName, language: { code: 'fr' }, components: [{ type: 'body', parameters: parameters.map((value) => ({ type: 'text', text: value })) }] } }), signal: AbortSignal.timeout(20_000) })
   if (!response.ok) throw new Error(`WhatsApp Cloud a refusé le message (HTTP ${response.status}).`)
 }
 async function deliver(row: OutboxRow) { if (row.channel === 'email') return sendEmail(row); if (row.channel === 'whatsapp') return sendWhatsApp(row); throw new Error('Canal de notification non reconnu.') }

@@ -1,16 +1,19 @@
 import { env } from 'node:process'
 import { defineEventHandler, setHeader } from 'h3'
 import { requireSalonRole } from '../../utils/admin-guard'
+import { getPlatformSetting, isKnownConfigKey } from '../../services/platform-config'
 
 // État de configuration des intégrations, côté serveur uniquement.
 // Contrat de sécurité : cette réponse n'expose JAMAIS de valeur de clé, seulement
-// les noms de variables et un booléen « configuré ». Les valeurs s'ajoutent
-// exclusivement dans le gestionnaire de secrets du projet (variables d'environnement).
+// les noms de variables et un booléen « configuré ». Les valeurs viennent de
+// l'environnement (Vercel, prioritaire) ou de la table platform_config (panneau
+// développement, repli sans redéploiement).
 export default defineEventHandler(async (event) => {
   setHeader(event, 'Cache-Control', 'private, no-store, max-age=0')
   await requireSalonRole(event, ['owner'])
 
-  const read = (name: string): boolean => {
+  const read = async (name: string): Promise<boolean> => {
+    if (isKnownConfigKey(name)) return Boolean((await getPlatformSetting(name)).value)
     const value = env[name]
     return typeof value === 'string' && value.trim().length > 0
   }
@@ -74,21 +77,23 @@ export default defineEventHandler(async (event) => {
     },
   ]
 
-  const integrations = groups.map((group) => {
+  const integrations = await Promise.all(groups.map(async (group) => {
     const names = [...group.vars, ...group.optional]
+    const states = await Promise.all(names.map(async (name) => ({ name, configured: await read(name) })))
+    const configuredByName = new Map(states.map((state) => [state.name, state.configured]))
     return {
       key: group.key,
       label: group.label,
       description: group.description,
       required: group.required,
-      variables: names.map((name) => ({ name, configured: read(name) })),
-      configured: group.vars.every(read),
-      missing: names.filter((name) => !read(name)),
+      variables: states,
+      configured: group.vars.every((name) => configuredByName.get(name) === true),
+      missing: names.filter((name) => !configuredByName.get(name)),
     }
-  })
+  }))
 
   return {
     integrations,
-    guidance: 'Les valeurs s’ajoutent uniquement dans le gestionnaire de secrets du projet (entrée « Secrets / Environment variables » du dashboard), jamais dans cette administration. Les valeurs ne sont jamais affichées ni collectées ici.',
+    guidance: 'Les valeurs s’ajoutent dans le gestionnaire de secrets Vercel (variables d’environnement, prioritaires) ou, pour le rôle développement, dans la section dédiée plus bas (repli immédiat sans redéploiement). Les valeurs ne sont jamais affichées ni collectées ici.',
   }
 })

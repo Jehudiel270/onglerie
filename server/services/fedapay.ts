@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
-import { env } from 'node:process'
 import { FedaPay, Transaction, Webhook } from 'fedapay'
 import { and, eq, gt, isNull, lt, ne, or, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import { formatInTimeZone } from 'date-fns-tz'
 import { SALON_TIMEZONE } from '~~/shared/constants/business'
 import { getDatabase } from '../db/client'
+import { getPlatformSetting } from './platform-config'
 import {
   appointmentStatusHistory,
   appointments,
@@ -23,16 +23,20 @@ const finalEventStatuses = new Set([
   'amount_currency_mismatch',
 ])
 
-export function isFedaPayConfigured(): boolean {
-  return Boolean(env.FEDAPAY_SECRET_KEY && env.FEDAPAY_WEBHOOK_SECRET)
+export async function isFedaPayConfigured(): Promise<boolean> {
+  const secretKey = (await getPlatformSetting('FEDAPAY_SECRET_KEY')).value
+  const webhookSecret = (await getPlatformSetting('FEDAPAY_WEBHOOK_SECRET')).value
+  return Boolean(secretKey && webhookSecret)
 }
 
-function configureFedaPay(): void {
-  if (!env.FEDAPAY_SECRET_KEY) {
+async function configureFedaPay(): Promise<void> {
+  const secretKey = (await getPlatformSetting('FEDAPAY_SECRET_KEY')).value
+  if (!secretKey) {
     throw createError({ statusCode: 503, statusMessage: 'Le paiement FedaPay n’est pas configuré.' })
   }
-  FedaPay.setApiKey(env.FEDAPAY_SECRET_KEY)
-  FedaPay.setEnvironment(env.FEDAPAY_ENV === 'production' ? 'production' : 'sandbox')
+  const environment = (await getPlatformSetting('FEDAPAY_ENV')).value
+  FedaPay.setApiKey(secretKey)
+  FedaPay.setEnvironment(environment === 'production' ? 'production' : 'sandbox')
 }
 
 export async function createDepositCheckout(input: {
@@ -46,11 +50,11 @@ export async function createDepositCheckout(input: {
   email?: string | null
   callbackUrl: string
 }) {
-  if (!isFedaPayConfigured()) {
+  if (!(await isFedaPayConfigured())) {
     throw createError({ statusCode: 503, statusMessage: 'Configurez la clé FedaPay et le secret du webhook avant d’activer les paiements.' })
   }
 
-  configureFedaPay()
+  await configureFedaPay()
   const transaction = await Transaction.create({
     description: `Acompte réservation ${input.reference}`,
     amount: input.amountXof,
@@ -90,13 +94,14 @@ export async function createDepositCheckout(input: {
   return { checkoutUrl: checkoutUrl.toString(), providerReference: String(transaction.id), paymentId: payment.id }
 }
 
-export function verifyFedaPayWebhook(rawBody: string, signature: string | null): Record<string, unknown> {
-  if (!env.FEDAPAY_WEBHOOK_SECRET) {
+export async function verifyFedaPayWebhook(rawBody: string, signature: string | null): Promise<Record<string, unknown>> {
+  const webhookSecret = (await getPlatformSetting('FEDAPAY_WEBHOOK_SECRET')).value
+  if (!webhookSecret) {
     throw createError({ statusCode: 503, statusMessage: 'Le webhook FedaPay n’est pas configuré.' })
   }
   if (!signature || !rawBody) throw createError({ statusCode: 400, statusMessage: 'Signature FedaPay absente.' })
   try {
-    return Webhook.constructEvent(rawBody, signature, env.FEDAPAY_WEBHOOK_SECRET, 300) as Record<string, unknown>
+    return Webhook.constructEvent(rawBody, signature, webhookSecret, 300) as Record<string, unknown>
   } catch {
     throw createError({ statusCode: 400, statusMessage: 'Signature FedaPay invalide ou expirée.' })
   }
@@ -118,7 +123,7 @@ function eventData(eventType: string, providerTransactionId: string, remote: unk
 }
 
 export async function reconcileFedaPayWebhook(payload: Record<string, unknown>, rawBody: string) {
-  configureFedaPay()
+  await configureFedaPay()
   const rawEntity = (payload.entity ?? payload.data ?? payload.object) as Record<string, unknown> | undefined
   const providerId = rawEntity?.id ?? (rawEntity?.object as Record<string, unknown> | undefined)?.id
   if (providerId === undefined || providerId === null) {

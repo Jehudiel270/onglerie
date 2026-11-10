@@ -12,9 +12,9 @@ import { auditLogs, salonMemberships, staff, users } from '../../db/schema'
 // Permissions d'attribution :
 // - propriétaire (owner) : rôles staff et reception uniquement ;
 // - développement (dev, rôle plateforme) : staff, reception ET owner — utile
-//   pour transférer ou dupliquer la responsabilité du salon, sans jamais
-//   créer de compte « dev » depuis l'interface (les comptes développeurs sont
-//   créés côté serveur via scripts/bootstrap-dev.ts).
+//   pour transférer la responsabilité du salon, dans la limite d'UNE gérante
+//   active par salon. Les comptes développeurs sont créés côté serveur via
+//   scripts/bootstrap-dev.ts.
 const bodySchema = z.object({
   staffId: z.string().uuid(),
   email: z.string().trim().toLowerCase().email().max(254),
@@ -33,6 +33,11 @@ export default defineEventHandler(async (event) => {
   // l'attribution « owner » est réservée au rôle plateforme dev.
   if (assignedRole === 'owner' && role !== 'dev') {
     throw createError({ statusCode: 403, statusMessage: 'Seul le rôle développement peut créer un accès propriétaire.' })
+  }
+  // Une seule gérante active par salon, quel que soit le demandeur.
+  if (assignedRole === 'owner') {
+    const [existingOwner] = await db.select({ userId: salonMemberships.userId }).from(salonMemberships).where(and(eq(salonMemberships.salonId, salonId), eq(salonMemberships.role, 'owner'), eq(salonMemberships.active, true))).limit(1)
+    if (existingOwner) throw createError({ statusCode: 409, statusMessage: 'Ce salon a déjà une gérante. Passez par le rôle développement pour transférer la responsabilité.' })
   }
 
   const [profile] = await db.select().from(staff).where(and(eq(staff.id, staffId), eq(staff.salonId, salonId))).limit(1)
