@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@lucide/vue@1.68.0': cc97ad0d25e4a75694122c7ca5e76ed6e4aa4530f569da09b92eb47db7c620bd
+
 importers:
 
   .:
@@ -13,7 +16,7 @@ importers:
         version: 1.7.17(@better-auth/core@1.7.17(@better-auth/utils@0.5.1)(@better-fetch/fetch@1.3.3)(better-call@1.4.5(zod@4.6.7))(jose@6.2.15)(kysely@0.29.8)(nanostores@1.5.5))(@better-auth/utils@0.5.1)(drizzle-orm@0.45.4(@neondatabase/serverless@1.2.0)(kysely@0.29.8)(pg@8.23.1))
       '@lucide/vue':
         specifier: 1.68.0
-        version: 1.68.0(vue@3.5.44(typescript@5.9.3))
+        version: 1.68.0(patch_hash=cc97ad0d25e4a75694122c7ca5e76ed6e4aa4530f569da09b92eb47db7c620bd)(vue@3.5.44(typescript@5.9.3))
       '@neondatabase/serverless':
         specifier: 1.2.0
         version: 1.2.0
@@ -6263,7 +6266,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@lucide/vue@1.68.0(vue@3.5.44(typescript@5.9.3))':
+  '@lucide/vue@1.68.0(patch_hash=cc97ad0d25e4a75694122c7ca5e76ed6e4aa4530f569da09b92eb47db7c620bd)(vue@3.5.44(typescript@5.9.3))':
     dependencies:
       vue: 3.5.44(typescript@5.9.3)
 

@@ -17,3 +17,6 @@ minimumReleaseAgeExclude:
   - '@better-auth/telemetry@1.7.17'
   - better-auth@1.7.17
   - '@lucide/vue@1.68.0'
+
+patchedDependencies:
+  '@lucide/vue@1.68.0': patches/@lucide__vue@1.68.0.patch

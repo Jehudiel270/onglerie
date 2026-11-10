@@ -1,0 +1,29 @@
+diff --git a/dist/cjs/lucide-vue.js b/dist/cjs/lucide-vue.js
+index 2feede586dae771678f498d13c8d3ad855c995ed..7457f43a5d37898beb0c316162bf753f88561f50 100644
+--- a/dist/cjs/lucide-vue.js
++++ b/dist/cjs/lucide-vue.js
+@@ -95,7 +95,7 @@ function setLucideProps(props) {
+   return vue.provide(LUCIDE_CONTEXT, props);
+ }
+ function useLucideProps() {
+-  return vue.inject(LUCIDE_CONTEXT, {});
++  return vue.inject(LUCIDE_CONTEXT, {}) || {};
+ }
+ 
+ const Icon = ({
+diff --git a/dist/esm/context.mjs b/dist/esm/context.mjs
+index 6f4a4fee0de9bcef37a081e14ac26e2092a8216a..a5a0212dd98ab61bb6790b975aafeeca1a0dde9b 100644
+--- a/dist/esm/context.mjs
++++ b/dist/esm/context.mjs
+@@ -12,7 +12,10 @@ function setLucideProps(props) {
+   return provide(LUCIDE_CONTEXT, props);
+ }
+ function useLucideProps() {
+-  return inject(LUCIDE_CONTEXT, {});
++  // Correctif : inject() renvoie undefined quand aucune instance Vue courante n'est
++  // visible (SSR avec une seconde copie de Vue) ; on retombe alors sur un
++  // contexte vide au lieu de casser le rendu serveur.
++  return inject(LUCIDE_CONTEXT, {}) || {};
+ }
+ 
+ export { LUCIDE_CONTEXT, setLucideProps, useLucideProps };

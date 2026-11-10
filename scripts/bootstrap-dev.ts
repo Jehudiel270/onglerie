@@ -26,7 +26,11 @@ const databaseUrl=env.NEON_DATABASE_URL_UNPOOLED||env.NEON_DATABASE_URL
 if(env.ALLOW_DEV_BOOTSTRAP!=='YES_CREATE_FIRST_DEV')throw new Error('Opération bloquée. Pour autoriser explicitement la création, définissez ALLOW_DEV_BOOTSTRAP=YES_CREATE_FIRST_DEV pour cette commande uniquement.')
 if(!databaseUrl)throw new Error('Renseignez NEON_DATABASE_URL_UNPOOLED (connexion directe Neon) pour cette exécution.')
 if(!env.BOOTSTRAP_DEV_NAME||!env.BOOTSTRAP_DEV_EMAIL||!env.BOOTSTRAP_DEV_PASSWORD)throw new Error('Renseignez BOOTSTRAP_DEV_NAME, BOOTSTRAP_DEV_EMAIL et BOOTSTRAP_DEV_PASSWORD dans l’environnement pour cette exécution.')
-if(env.BOOTSTRAP_DEV_PASSWORD.length<14||!/[a-z]/.test(env.BOOTSTRAP_DEV_PASSWORD)||!/[A-Z]/.test(env.BOOTSTRAP_DEV_PASSWORD)||!/[0-9]/.test(env.BOOTSTRAP_DEV_PASSWORD))throw new Error('Le mot de passe du compte développement doit faire au moins 14 caractères et inclure une minuscule, une majuscule et un chiffre.')
+// Le compte développeur est créé côté serveur avec un accès direct à la base,
+// derrière ALLOW_DEV_BOOTSTRAP : la politique locale est plus souple que celle
+// des comptes salon (10 caractères) car le développeur reste libre de choisir
+// son mot de passe ; la connexion reste protégée par le code e-mail (OTP).
+if(env.BOOTSTRAP_DEV_PASSWORD.length<10||!/[a-z]/.test(env.BOOTSTRAP_DEV_PASSWORD)||!/[A-Z]/.test(env.BOOTSTRAP_DEV_PASSWORD)||!/[0-9]/.test(env.BOOTSTRAP_DEV_PASSWORD))throw new Error('Le mot de passe du compte développement doit faire au moins 10 caractères et inclure une minuscule, une majuscule et un chiffre.')
 const devEmail=env.BOOTSTRAP_DEV_EMAIL.trim().toLowerCase()
 if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(devEmail))throw new Error('Adresse e-mail du développeur invalide.')
 const pool=new Pool({connectionString:databaseUrl})

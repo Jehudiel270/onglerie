@@ -88,6 +88,8 @@ export default defineNuxtConfig({
     devOptions: { enabled: false },
   },
   nitro: {
-    preset: 'vercel',
+    // « vercel » en production ; « node-server » permet de tester le build de
+    // production en local : NITRO_PRESET=node-server pnpm build && pnpm preview
+    preset: (process.env.NITRO_PRESET as 'vercel' | 'node-server') || 'vercel',
   },
 })
