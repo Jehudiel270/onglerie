@@ -1,8 +1,9 @@
 import { and, asc, eq } from 'drizzle-orm'
-import { createError, getHeader, getQuery, type H3Event } from 'h3'
+import { createError, getCookie, getHeader, getQuery, type H3Event } from 'h3'
 import { getDatabase } from '../db/client'
 import { salonMemberships, salons } from '../db/schema'
 import { type SalonRole } from '../../shared/constants/rbac'
+import { assertOtpVerified } from './otp-gate'
 
 export type { SalonRole }
 
@@ -28,29 +29,37 @@ export async function requireSalonRole(event: H3Event, allowedRoles: SalonRole[]
     throw createError({ statusCode: 401, statusMessage: 'Connexion requise.' })
   }
 
-  const requestedSalonId = getHeader(event, 'x-salon-id') || String(getQuery(event).salonId || '')
+  // Double vérification (code e-mail) obligatoire pour les accès de gestion :
+  // sans elle, aucune API de gestion ne répond (403 OTP_REQUIRED).
+  await assertOtpVerified(event, session)
+
+  // Salon demandé : en-tête x-salon-id, paramètre salonId, ou cookie de
+  // sélection « Salon actif » (poseur par le sélecteur du panneau, dev comme
+  // propriétaire multi-salons).
+  const requestedSalonId = getHeader(event, 'x-salon-id') || String(getQuery(event).salonId || '') || getCookie(event, 'salon_actif') || ''
   const db = getDatabase()
 
   // Rôle plateforme « dev » : identifié au niveau du compte utilisateur
-  // (user.role = 'dev') et non par une adhésion salon. Le développeur·se
-  // contourne les adhésions et agit sur le salon demandé (en-tête x-salon-id)
-  // ou sur le premier salon actif de la plateforme.
+  // (user.role = 'dev') et non par une adhésion salon. Le développeur
+  // contourne les adhésions et agit sur le salon demandé ou sur le premier
+  // salon actif de la plateforme.
   if ((session.user as { role?: string }).role === 'dev') {
     const salonId = await resolveDevSalonId(db, requestedSalonId)
     return { db, user: session.user, salonId, role: 'dev' as SalonRole }
   }
 
+  // Adhésions actives du compte, du plus ancien au plus récent : une
+  // propriétaire qui crée des succursales en possède plusieurs et choisit le
+  // salon via « Salon actif » ; sans sélection, le salon principal s'applique.
   const memberships = await db.select().from(salonMemberships).where(and(
     eq(salonMemberships.userId, session.user.id),
     eq(salonMemberships.active, true),
-    ...(requestedSalonId ? [eq(salonMemberships.salonId, requestedSalonId)] : []),
-  ))
-  const membership = requestedSalonId ? memberships[0] : memberships.length === 1 ? memberships[0] : undefined
+  )).orderBy(asc(salonMemberships.createdAt))
+  const membership = requestedSalonId
+    ? memberships.find((row) => row.salonId === requestedSalonId)
+    : memberships[0]
 
   if (!membership) {
-    if (memberships.length > 1) {
-      throw createError({ statusCode: 400, statusMessage: 'Précisez le salon autorisé.' })
-    }
     throw createError({ statusCode: 403, statusMessage: 'Aucun accès à ce salon.' })
   }
   if (!allowedRoles.includes(membership.role as SalonRole)) {

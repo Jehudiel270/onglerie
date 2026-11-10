@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { KeyRound, ShieldAlert, UserCog } from '@lucide/vue'
+import { Building2, KeyRound, ShieldAlert, UserCog } from '@lucide/vue'
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 useSeoMeta({ title: 'Comptes & accès — Développement', robots: 'noindex,nofollow' })
 
@@ -17,6 +17,18 @@ const { data, refresh } = await useFetch<DevData>('/api/admin/dev-accounts', { k
 const accounts = computed<Account[]>(() => data.value?.items ?? [])
 
 const ROLE_LABELS: Record<string, string> = { owner: 'Gérante', reception: 'Réception', staff: 'Employée', dev: 'Développeur', customer: 'Cliente' }
+
+// Salons & succursales : vue de contrôle du développeur. La création
+// appartient à la propriétaire (Paramètres → Succursales) ; le développeur
+// garde l'œil global ici et l'outil via l'API si un dépannage l'exige.
+const salonRows = ref<Array<{ id: string; name: string; slug: string; city: string | null; status: string; createdAt: string }>>([])
+const salonError = ref('')
+const salonDate = (value: string) => new Intl.DateTimeFormat('fr-BJ', { dateStyle: 'medium' }).format(new Date(value))
+async function loadSalons() {
+  try { salonRows.value = (await $fetch<{ items: Array<{ id: string; name: string; slug: string; city: string | null; status: string; createdAt: string }> }>('/api/admin/salons')).items }
+  catch (error) { const detail = (error as { data?: { statusMessage?: string; message?: string } })?.data; salonError.value = detail?.statusMessage || detail?.message || 'Liste des salons indisponible.' }
+}
+watch(isDevSession, (value) => { if (value) loadSalons() }, { immediate: true })
 
 // Création d'un accès
 const createForm = reactive({ name: '', email: '', password: '', role: 'reception', staffId: '' })
@@ -75,6 +87,21 @@ async function setActive(account: Account, membership: Account['memberships'][nu
     <div v-if="!isDevSession" class="admin-alert"><ShieldAlert :size="15" /> Section réservée au rôle développeur. Votre compte n’a pas ce niveau ; adressez-vous à l’équipe technique.</div>
 
     <template v-else>
+      <section class="admin-card">
+        <div class="admin-card__title"><h2><Building2 :size="18" /> Salons &amp; succursales</h2><span class="comptes-count">{{ salonRows.length }} salon(s)</span></div>
+        <p class="comptes-help">Vue de contrôle de la plateforme. La création d’une succursale appartient à la <strong>propriétaire</strong> : elle le fait elle-même depuis <strong>Paramètres → Succursales</strong>, ce qui lui donne automatiquement le contrôle du nouveau salon. Ce panneau ne sert qu’au dépannage : sélectionnez le salon à inspecter via « Salon actif » en haut du panneau.</p>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Nom</th><th>Slug</th><th>Ville</th><th>Statut</th><th>Créé le</th></tr></thead>
+            <tbody>
+              <tr v-for="salon in salonRows" :key="salon.id"><td><strong>{{ salon.name }}</strong></td><td>{{ salon.slug }}</td><td>{{ salon.city || '—' }}</td><td><span :class="['var-state', { 'is-ok': salon.status === 'active' }]">{{ salon.status }}</span></td><td>{{ salonDate(salon.createdAt) }}</td></tr>
+              <tr v-if="!salonRows.length"><td colspan="5" class="admin-empty">Aucun salon enregistré.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-if="salonError" class="admin-alert comptes-note">{{ salonError }}</p>
+      </section>
+
       <section class="admin-card">
         <div class="admin-card__title"><h2><UserCog :size="18" /> Créer un accès</h2></div>
         <p class="comptes-help">Le salon n’a qu’<strong>une seule gérante</strong> : sa propriétaire, qui voit tout et crée son équipe. La <strong>réception</strong> gère le quotidien sans le chiffre d’affaires ; elle peut être rattachée à une fiche praticienne si elle fait aussi des poses. L’<strong>employée</strong> doit être rattachée à sa fiche : elle ne voit que son agenda sur /staff. Les comptes développeurs ne se créent jamais ici, uniquement via le script serveur <code>bootstrap:dev</code>.</p>

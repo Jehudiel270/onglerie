@@ -144,6 +144,14 @@ export const salonSettings = pgTable('salon_settings', {
 export const platformConfig = pgTable('platform_config', {
   key: text('key').primaryKey(), value: text('value').notNull(), updatedAt: updatedAt(),
 })
+// Défis de connexion à double vérification (OTP e-mail) pour les accès de
+// gestion (dev, owner, reception, staff). Seule l'empreinte HMAC du code est
+// stockée ; le code lui-même n'existe que dans l'e-mail envoyé.
+export const loginChallenges = pgTable('login_challenges', {
+  id: uuid('id').primaryKey(), userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  codeHash: text('code_hash').notNull(), attempts: integer('attempts').default(0).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(), consumedAt: timestamp('consumed_at', { withTimezone: true }), createdAt: createdAt(),
+}, (table) => [index('login_challenge_user_created_idx').on(table.userId, table.createdAt), index('login_challenge_expiry_idx').on(table.expiresAt)])
 export const siteContent = pgTable('site_content', {
   id: uuid('id').defaultRandom().primaryKey(), salonId: uuid('salon_id').notNull().references(() => salons.id, { onDelete: 'cascade' }), contentKey: text('content_key').notNull(), content: jsonb('content').$type<Record<string, unknown>>().notNull(), updatedAt: updatedAt(),
 }, (table) => [uniqueIndex('site_content_key_unique').on(table.salonId, table.contentKey)])
@@ -163,4 +171,4 @@ export const auditLogs = pgTable('audit_logs', {
 export const apiRateLimits = pgTable('api_rate_limits', {
   bucketKey: text('bucket_key').primaryKey(), count: integer('count').notNull(), resetAt: timestamp('reset_at', { withTimezone: true }).notNull(), updatedAt: updatedAt(),
 }, (table) => [index('api_rate_limit_reset_idx').on(table.resetAt)])
-export const schema = { users, sessions, accounts, verifications, salons, salonMemberships, categories, services, staff, staffServices, staffSchedules, scheduleExceptions, customers, portfolioItems, portfolioTags, portfolioItemTags, appointments, guestRecoveryChallenges, appointmentServices, appointmentStatusHistory, customerAppointmentRequests, payments, paymentWebhookEvents, salonSettings, siteContent, contactMessages, notificationOutbox, notificationLogs, auditLogs, apiRateLimits }
+export const schema = { users, sessions, accounts, verifications, salons, salonMemberships, categories, services, staff, staffServices, staffSchedules, scheduleExceptions, customers, portfolioItems, portfolioTags, portfolioItemTags, appointments, guestRecoveryChallenges, appointmentServices, appointmentStatusHistory, customerAppointmentRequests, payments, paymentWebhookEvents, salonSettings, platformConfig, loginChallenges, siteContent, contactMessages, notificationOutbox, notificationLogs, auditLogs, apiRateLimits }

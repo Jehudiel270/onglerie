@@ -1,4 +1,4 @@
-import { createError, getHeader, type H3Event } from 'h3'
+import { createError, getCookie, getHeader, type H3Event } from 'h3'
 import { getDatabase } from '../db/client'
 import { requireSalonRole, resolveDevSalonId } from './admin-guard'
 
@@ -10,7 +10,7 @@ export async function requireDevUser(event: H3Event) {
   if ((user as { role?: string }).role !== 'dev') {
     throw createError({ statusCode: 403, statusMessage: 'Section réservée au rôle développeur.' })
   }
-  const requestedSalonId = getHeader(event, 'x-salon-id') || ''
+  const requestedSalonId = getHeader(event, 'x-salon-id') || getCookie(event, 'salon_actif') || ''
   const resolved = requestedSalonId ? await resolveDevSalonId(db, requestedSalonId) : salonId
   return { db, user, salonId: resolved }
 }

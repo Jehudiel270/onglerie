@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AdminResourceManager from '../../components/AdminResourceManager.vue'
+import { Building2 } from '@lucide/vue'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -54,11 +55,51 @@ const settingColumns = [
 ]
 
 useSeoMeta({ title: 'Paramètres — Administration', robots: 'noindex,nofollow' })
+
+// Succursales : c'est la propriétaire qui crée et gère ses entités
+// supplémentaires. La création lui donne automatiquement le contrôle
+// complet de la nouvelle succursale ; elle la sélectionne via « Salon actif »
+// en haut du panneau pour la configurer.
+const { data: sessionData, refresh: refreshSession } = await useFetch<{ role: string; salonId: string; salons?: Array<{ id: string; name: string; city: string | null; status: string; role: string }> }>('/api/admin/session', { key: 'parametres-session' })
+const mySalons = computed(() => sessionData.value?.salons ?? [])
+const branchForm = reactive({ name: '', city: '' })
+const branchBusy = ref(false), branchError = ref(''), branchOk = ref('')
+async function submitBranch() {
+  branchBusy.value = true; branchError.value = ''; branchOk.value = ''
+  try {
+    const result = await $fetch<{ guidance: string }>('/api/admin/salons', { method: 'POST', body: { name: branchForm.name.trim(), city: branchForm.city.trim() } })
+    branchOk.value = result.guidance
+    branchForm.name = ''; branchForm.city = ''
+    await refreshSession()
+  } catch (error) { const detail = (error as { data?: { statusMessage?: string; message?: string } })?.data; branchError.value = detail?.statusMessage || detail?.message || 'Création impossible.' } finally { branchBusy.value = false }
+}
 </script>
 
 <template>
   <div class="settings-admin">
     <AdminResourceManager resource="salon" title="Informations du salon" description="Identité, contacts et coordonnées fournis par votre entreprise." :fields="salonFields" :columns="salonColumns" :creatable="false" :deletable="false" />
+
+    <section v-if="['owner', 'dev'].includes(sessionData?.role || '')" class="admin-card">
+      <div class="admin-card__title"><h2><Building2 :size="18" /> Succursales</h2><span class="comptes-count">{{ mySalons.length }} salon(s)</span></div>
+      <p class="settings-note">Le salon appartient à la propriétaire : c'est elle qui crée ses succursales ici, jamais l'équipe ni les employées. Une succursale est un salon à part entière (coordonnées, prestations, horaires, équipe) ; après création, sélectionnez-la via « Salon actif » en haut du panneau pour la configurer, puis revenez sur « Salon principal » pour continuer à gérer l'actuel. Le site public et les réservations servent toujours le salon principal.</p>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Nom</th><th>Ville</th><th>Statut</th><th>Rôle</th></tr></thead>
+          <tbody>
+            <tr v-for="salon in mySalons" :key="salon.id"><td><strong>{{ salon.name }}</strong><small v-if="salon.id === sessionData?.salonId"> — salon affiché actuellement</small></td><td>{{ salon.city || '—' }}</td><td><span :class="['var-state', { 'is-ok': salon.status === 'active' }]">{{ salon.status }}</span></td><td>{{ salon.role }}</td></tr>
+            <tr v-if="!mySalons.length"><td colspan="4" class="admin-empty">Aucune succursale enregistrée.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <form class="admin-form-grid" @submit.prevent="submitBranch">
+        <label class="form-field"><span>Nom de la succursale *</span><input v-model="branchForm.name" class="form-control" required maxlength="120" autocomplete="off"></label>
+        <label class="form-field"><span>Ville</span><input v-model="branchForm.city" class="form-control" maxlength="120" autocomplete="off"></label>
+        <div class="wide comptes-actions"><button class="btn btn-primary" type="submit" :disabled="branchBusy || !branchForm.name">{{ branchBusy ? 'Création…' : 'Créer la succursale' }}</button></div>
+        <p v-if="branchOk" class="admin-success wide">{{ branchOk }}</p>
+        <p v-if="branchError" class="admin-alert wide">{{ branchError }}</p>
+      </form>
+    </section>
+
     <AdminResourceManager resource="settings" title="Réservations, rappels et apparence" description="Règles de réservation et préférences visuelles de ce salon. La préférence de réduction des animations des visiteuses reste prioritaire." :fields="settingFields" :columns="settingColumns" :creatable="false" :deletable="false" />
     <p class="settings-note">Devise : XOF · Fuseau : Africa/Porto-Novo. Les rappels ne sont envoyés que si les tâches planifiées et les variables du fournisseur sont configurées.</p>
   </div>
@@ -67,4 +108,5 @@ useSeoMeta({ title: 'Paramètres — Administration', robots: 'noindex,nofollow'
 <style scoped>
 .settings-admin { display: grid; gap: 2.5rem; }
 .settings-note { color: #887c74; font-size: .69rem; }
+.comptes-count { color: #877b73; font-size: .62rem; }
 </style>

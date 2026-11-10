@@ -1,17 +1,24 @@
 // Matrice des rôles salon — source unique partagée par le serveur (garde API)
 // et le client (navigation admin). Rôles salon : owner (propriétaire = la
 // cliente du salon), reception (réception), staff (employé·e) et dev
-// (développeur·se de la plateforme). La cliente connectée n'est pas un rôle
+// (développeur de la plateforme). La cliente connectée n'est pas un rôle
 // salon : elle dispose de son espace /mon-compte côté « customer ».
 //
 // Le rôle dev n'est PAS une adhésion salon : il est attribué au niveau du
 // compte utilisateur (user.role = 'dev', voir scripts/bootstrap-dev.ts). Le
 // garde serveur (server/utils/admin-guard.ts) détecte ce rôle et contourne les
-// adhésions : le développeur·se voit tous les salons avec toutes les
+// adhésions : le développeur voit tous les salons avec toutes les
 // permissions, sans jamais apparaître dans l'équipe du salon.
 
 export const SALON_ROLES = ['owner', 'reception', 'staff', 'dev'] as const
 export type SalonRole = (typeof SALON_ROLES)[number]
+
+// Rôles à accès de gestion (admin/dev/staff) : leur connexion exige une double
+// vérification par code e-mail (voir server/utils/otp-gate.ts). Les clientes
+// (« customer ») ne passent jamais par cette vérification.
+export function isPrivilegedRole(role?: string | null): boolean {
+  return role === 'dev' || role === 'owner' || role === 'reception' || role === 'staff'
+}
 
 export const ROLE_LABELS: Record<SalonRole, string> = {
   owner: 'Propriétaire',
