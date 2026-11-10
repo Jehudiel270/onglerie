@@ -18,7 +18,17 @@ function messageFor(row: OutboxRow) {
   return { subject: `Rendez-vous ${reference} confirmé`, body: `Votre rendez-vous ${reference} est confirmé. Date : ${when}. Total : ${total} XOF. Acompte reçu : ${paid} XOF. Solde : ${balance} XOF.` }
 }
 async function sendEmail(row: OutboxRow) {
-  if (!env.EMAIL_API_URL || !env.EMAIL_API_KEY || !env.EMAIL_FROM) throw new Error('Fournisseur e-mail non configuré.')
+  const from = env.EMAIL_FROM
+  // Fournisseur prioritaire : Brevo (transactional). Le destinataire est un e-mail
+  // ; l'expéditeur doit être validé dans le compte Brevo (expéditeurs & domaines).
+  if (env.BREVO_API_KEY && from) {
+    const message = messageFor(row)
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': env.BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ sender: { email: from, name: env.EMAIL_FROM_NAME || 'Onglerie Carrel' }, to: [{ email: row.recipient }], subject: message.subject, textContent: message.body, htmlContent: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#2b2422">${safe(message.body).replace(/\n/g, '<br>')}</div>` }), signal: AbortSignal.timeout(20_000) })
+    if (!response.ok) throw new Error(`Brevo a refusé l'e-mail (HTTP ${response.status}).`)
+    return
+  }
+  // Repli : adaptateur HTTP générique (EMAIL_API_URL + clé + expéditeur).
+  if (!env.EMAIL_API_URL || !env.EMAIL_API_KEY || !env.EMAIL_FROM) throw new Error('Fournisseur e-mail non configuré (BREVO_API_KEY ou EMAIL_API_*).')
   const destination = new URL(env.EMAIL_API_URL)
   if (destination.protocol !== 'https:' || destination.username || destination.password) throw new Error('EMAIL_API_URL doit être une URL HTTPS sans identifiants intégrés.')
   const message = messageFor(row)

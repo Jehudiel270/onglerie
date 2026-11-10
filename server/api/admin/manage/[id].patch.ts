@@ -18,7 +18,7 @@ const envelope=z.object({resource:z.enum(['categories','services','portfolio','s
 const makeSlug=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,95)||'tag'
 export default defineEventHandler(async(event)=>{
   setHeader(event,'Cache-Control','private, no-store, max-age=0')
-  const{db,salonId,user}=await requireSalonRole(event,['owner','manager']),id=getRouterParam(event,'id')||''
+  const{db,salonId,user}=await requireSalonRole(event,['owner']),id=getRouterParam(event,'id')||''
   if(!z.string().uuid().safeParse(id).success)throw createError({statusCode:400,statusMessage:'Identifiant invalide.'})
   const parsed=envelope.safeParse(await readBody(event));if(!parsed.success)throw createError({statusCode:422,statusMessage:'Requête invalide.',data:parsed.error.flatten()})
   const{resource,data}=parsed.data

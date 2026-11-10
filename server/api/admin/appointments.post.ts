@@ -13,7 +13,7 @@ import { calculateDeposit,getSalonBookingSettings } from '../../services/salon-s
 const bodySchema=z.object({serviceIds:z.array(z.string().uuid()).min(1).max(6),staffId:z.string().uuid(),startsAt:z.string().datetime({offset:true}),firstName:z.string().trim().min(2).max(80),lastName:z.string().trim().min(2).max(80),phone:z.string().trim().min(8).max(25),whatsapp:z.string().trim().max(25).optional().or(z.literal('')),email:z.string().trim().email().max(254).optional().or(z.literal('')),note:z.string().trim().max(800).optional().or(z.literal('')),idempotencyKey:z.string().uuid(),reason:z.string().trim().min(4).max(500)}).strict()
 export default defineEventHandler(async(event)=>{
   setHeader(event,'Cache-Control','private, no-store, max-age=0')
-  const{db,salonId,user}=await requireSalonRole(event,['owner','manager'])
+  const{db,salonId,user}=await requireSalonRole(event,['owner','reception'])
   const parsed=bodySchema.safeParse(await readBody(event));if(!parsed.success)throw createError({statusCode:422,statusMessage:'Informations du rendez-vous invalides.',data:parsed.error.flatten()})
   const input=parsed.data,startsAt=new Date(input.startsAt)
   const bookingSettings=await getSalonBookingSettings(salonId),now=new Date()

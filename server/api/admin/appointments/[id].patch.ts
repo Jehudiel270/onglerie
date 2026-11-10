@@ -13,7 +13,7 @@ const patchSchema=z.object({status:z.enum(['confirmed','cancelled','completed','
 const minute=(value:string)=>{const[h='0',m='0']=value.split(':');return Number(h)*60+Number(m)}
 export default defineEventHandler(async(event)=>{
   setHeader(event,'Cache-Control','private, no-store, max-age=0')
-  const{db,salonId,user}=await requireSalonRole(event,['owner','manager'])
+  const{db,salonId,user}=await requireSalonRole(event,['owner','reception'])
   const id=getRouterParam(event,'id')||'';if(!z.string().uuid().safeParse(id).success)throw createError({statusCode:400,statusMessage:'Identifiant de rendez-vous invalide.'})
   const parsed=patchSchema.safeParse(await readBody(event));if(!parsed.success)throw createError({statusCode:422,statusMessage:'Modification invalide.',data:parsed.error.flatten()})
   if(!parsed.data.status&&!parsed.data.startsAt)throw createError({statusCode:422,statusMessage:'Aucune modification reçue.'})

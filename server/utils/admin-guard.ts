@@ -2,10 +2,11 @@ import { and, eq } from 'drizzle-orm'
 import { createError, getHeader, getQuery, type H3Event } from 'h3'
 import { getDatabase } from '../db/client'
 import { salonMemberships } from '../db/schema'
+import { type SalonRole } from '../../shared/constants/rbac'
 
-export type SalonRole = 'owner' | 'manager' | 'staff'
+export type { SalonRole }
 
-export async function requireSalonRole(event: H3Event, allowedRoles: SalonRole[] = ['owner', 'manager']) {
+export async function requireSalonRole(event: H3Event, allowedRoles: SalonRole[] = ['owner', 'reception']) {
   const auth = serverAuth(event)
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {

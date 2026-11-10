@@ -6,7 +6,7 @@ import { auditLogs, categories, portfolioItems, scheduleExceptions, services, st
 
 export default defineEventHandler(async(event)=>{
   setHeader(event,'Cache-Control','private, no-store, max-age=0')
-  const{db,salonId,user}=await requireSalonRole(event,['owner','manager'])
+  const{db,salonId,user}=await requireSalonRole(event,['owner'])
   const id=getRouterParam(event,'id')||'',query=z.object({resource:z.enum(['categories','services','portfolio','staff','schedules','exceptions'])}).safeParse(getQuery(event))
   if(!z.string().uuid().safeParse(id).success||!query.success)throw createError({statusCode:400,statusMessage:'Identifiant ou ressource invalide.'})
   let changed=false

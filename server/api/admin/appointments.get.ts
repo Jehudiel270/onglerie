@@ -6,7 +6,7 @@ import { appointmentServices, appointments, customers, staff } from '../../db/sc
 
 export default defineEventHandler(async(event)=>{
   setHeader(event,'Cache-Control','private, no-store, max-age=0')
-  const{db,salonId}=await requireSalonRole(event,['owner','manager'])
+  const{db,salonId}=await requireSalonRole(event,['owner','reception'])
   const query=z.object({status:z.string().optional(),from:z.string().datetime({offset:true}).optional(),to:z.string().datetime({offset:true}).optional(),q:z.string().trim().max(100).optional()}).safeParse(getQuery(event))
   if(!query.success)throw createError({statusCode:400,statusMessage:'Filtres invalides.'})
   const statuses=query.data.status?query.data.status.split(',').filter(Boolean):[]

@@ -2,6 +2,7 @@ import { and, eq, gt, inArray, isNull, lt, ne, or } from 'drizzle-orm'
 import { createError, defineEventHandler, readBody, setHeader } from 'h3'
 import { z } from 'zod'
 import { requireSalonRole } from '../../utils/admin-guard'
+import { canWriteResource, type ManageResource } from '~~/shared/constants/rbac'
 import { appointmentStatusHistory, appointments, auditLogs, categories, customers, notificationOutbox, payments, portfolioItemTags, portfolioItems, portfolioTags, salonSettings, salons, scheduleExceptions, services, siteContent, staff, staffSchedules, staffServices } from '../../db/schema'
 import { manualPaymentPreflightReason, shouldConfirmManualPayment } from '../../services/manual-payment'
 
@@ -21,9 +22,10 @@ const envelope=z.object({resource:z.enum(['categories','services','portfolio','s
 const makeSlug=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,95)||'tag'
 export default defineEventHandler(async(event)=>{
   setHeader(event,'Cache-Control','private, no-store, max-age=0')
-  const {db,salonId,user}=await requireSalonRole(event,['owner','manager'])
+  const {db,salonId,user,role}=await requireSalonRole(event,['owner','reception'])
   const raw=envelope.safeParse(await readBody(event));if(!raw.success)throw createError({statusCode:422,statusMessage:'Vérifiez la ressource et ses champs.',data:raw.error.flatten()})
   const {resource}=raw.data,data=raw.data.data
+  if(!canWriteResource(role,resource as ManageResource))throw createError({statusCode:403,statusMessage:'Votre rôle ne permet pas de créer cette ressource.'})
   if(resource==='categories'){
     const value=categorySchema.safeParse(data);if(!value.success)throw createError({statusCode:422,statusMessage:'Catégorie invalide.',data:value.error.flatten()})
     const [row]=await db.insert(categories).values({...value.data,salonId,description:value.data.description||null,imageUrl:value.data.imageUrl||null}).returning()

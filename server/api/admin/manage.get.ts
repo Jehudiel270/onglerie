@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm'
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
 import { z } from 'zod'
 import { requireSalonRole } from '../../utils/admin-guard'
+import { canReadResource, type ManageResource } from '~~/shared/constants/rbac'
 import { appointmentServices, appointments, categories, contactMessages, customers, notificationLogs, notificationOutbox, payments, portfolioItemTags, portfolioItems, portfolioTags, salonSettings, salons, scheduleExceptions, services, siteContent, staff, staffSchedules, staffServices } from '../../db/schema'
 import { DEFAULT_SALON_APPEARANCE } from '~~/shared/constants/appearance'
 import { DEFAULT_SALON_BOOKING_SETTINGS } from '../../services/salon-settings'
@@ -9,10 +10,11 @@ import { DEFAULT_SALON_BOOKING_SETTINGS } from '../../services/salon-settings'
 const resources=['services','categories','portfolio','staff','schedules','exceptions','customers','payments','notifications','content','settings','salon','contacts'] as const
 export default defineEventHandler(async(event)=>{
   setHeader(event,'Cache-Control','private, no-store, max-age=0')
-  const {db,salonId}=await requireSalonRole(event,['owner','manager'])
+  const {db,salonId,role}=await requireSalonRole(event,['owner','reception'])
   const query=z.object({resource:z.enum(resources),q:z.string().trim().max(100).optional()}).safeParse(getQuery(event))
   if(!query.success)throw createError({statusCode:400,statusMessage:'Ressource de gestion invalide.'})
   const {resource,q}=query.data
+  if(!canReadResource(role,resource as ManageResource))throw createError({statusCode:403,statusMessage:'Votre rôle ne permet pas de consulter cette ressource.'})
   switch(resource){
     case 'services':{
       const rows=await db.select({service:services,categoryName:categories.name,categorySlug:categories.slug}).from(services).leftJoin(categories,and(eq(services.categoryId,categories.id),eq(services.salonId,categories.salonId))).where(eq(services.salonId,salonId)).orderBy(asc(services.position),asc(services.name))

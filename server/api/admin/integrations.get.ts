@@ -8,7 +8,7 @@ import { requireSalonRole } from '../../utils/admin-guard'
 // exclusivement dans le gestionnaire de secrets du projet (variables d'environnement).
 export default defineEventHandler(async (event) => {
   setHeader(event, 'Cache-Control', 'private, no-store, max-age=0')
-  await requireSalonRole(event, ['owner', 'manager'])
+  await requireSalonRole(event, ['owner'])
 
   const read = (name: string): boolean => {
     const value = env[name]
@@ -50,26 +50,26 @@ export default defineEventHandler(async (event) => {
     },
     {
       key: 'scheduled',
-      label: 'Tâches planifiées',
-      description: 'Expiration des retenues et rappels protégés par CRON_SECRET.',
+      label: 'Tâches planifiées (cron-job.org)',
+      description: 'Expiration des retenues et rappels appelés par cron-job.org avec CRON_SECRET.',
       vars: ['CRON_SECRET'],
-      optional: ['BOOKING_HOLD_MINUTES'],
+      optional: [],
       required: false,
     },
     {
       key: 'whatsapp',
-      label: 'WhatsApp Business Cloud',
-      description: 'Modèles approuvés Meta requis ; repli wa.me sans fournisseur.',
-      vars: ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_BUSINESS_ACCOUNT_ID'],
+      label: 'WhatsApp Business Cloud (optionnel)',
+      description: 'Sans compte Meta, les rappels manuels wa.me restent disponibles côté administration.',
+      vars: ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'],
       optional: ['WHATSAPP_API_VERSION'],
       required: false,
     },
     {
       key: 'email',
-      label: 'E-mail transactionnel',
-      description: 'Adaptateur HTTP générique (URL, clé, expéditeur).',
-      vars: ['EMAIL_API_URL', 'EMAIL_API_KEY', 'EMAIL_FROM'],
-      optional: [],
+      label: 'E-mail transactionnel Brevo',
+      description: 'Clé API Brevo + expéditeur validé chez Brevo ; repli générique EMAIL_API_*.',
+      vars: ['BREVO_API_KEY', 'EMAIL_FROM'],
+      optional: ['EMAIL_FROM_NAME', 'EMAIL_API_URL', 'EMAIL_API_KEY'],
       required: false,
     },
   ]

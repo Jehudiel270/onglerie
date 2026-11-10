@@ -5,7 +5,7 @@ import { requireSalonRole } from '../../../utils/admin-guard'
 import { appointmentServices,appointmentStatusHistory,appointments,customers,payments,staff } from '../../../db/schema'
 export default defineEventHandler(async(event)=>{
   setHeader(event,'Cache-Control','private, no-store, max-age=0')
-  const{db,salonId}=await requireSalonRole(event,['owner','manager']),id=getRouterParam(event,'id')||''
+  const{db,salonId}=await requireSalonRole(event,['owner','reception']),id=getRouterParam(event,'id')||''
   if(!z.string().uuid().safeParse(id).success)throw createError({statusCode:400,statusMessage:'Identifiant de rendez-vous invalide.'})
   const[appointment]=await db.select({appointment:appointments,customer:customers,staffFirst:staff.firstName,staffLast:staff.lastName}).from(appointments).innerJoin(customers,and(eq(appointments.customerId,customers.id),eq(appointments.salonId,customers.salonId))).leftJoin(staff,and(eq(appointments.staffId,staff.id),eq(appointments.salonId,staff.salonId))).where(and(eq(appointments.id,id),eq(appointments.salonId,salonId))).limit(1)
   if(!appointment)throw createError({statusCode:404,statusMessage:'Rendez-vous introuvable.'})
