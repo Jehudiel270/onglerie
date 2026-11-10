@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
     intro: typeof hero.intro === 'string' ? hero.intro : '', heroImage: typeof hero.image === 'string' ? hero.image : '',
     about: typeof about.intro === 'string' ? about.intro : '', story: typeof about.story === 'string' ? about.story : '',
     values: Array.isArray(about.values) ? about.values : [], phone: salon.phone ?? '', whatsapp: salon.whatsapp ?? '', email: salon.email ?? '',
-    address: salon.address ?? '', city: salon.city ?? '', instagram: String(contacts.instagram ?? ''),
+    address: salon.address ?? '', city: salon.city ?? '', instagram: salon.instagram ?? String(contacts.instagram ?? ''),
     openingHours: Array.isArray(values.hours?.items) ? values.hours.items : [],
     faq: Array.isArray(values.faq?.items) ? values.faq.items : [],
     featuredSlugs: Array.isArray(values.home?.featuredServiceSlugs) ? values.home.featuredServiceSlugs : [], appearance,

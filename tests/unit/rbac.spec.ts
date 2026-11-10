@@ -4,8 +4,8 @@ import { canReadResource, canSeeRevenue, canWriteResource, RECEPTION_READABLE, S
 const ALL_RESOURCES: ManageResource[] = ['services', 'categories', 'portfolio', 'staff', 'schedules', 'exceptions', 'customers', 'payments', 'notifications', 'content', 'settings', 'salon', 'contacts']
 
 describe('matrice RBAC', () => {
-  it('couvre exactement les trois rôles salon', () => {
-    expect(SALON_ROLES).toEqual(['owner', 'reception', 'staff'])
+  it('couvre exactement les quatre rôles (owner, reception, staff, dev)', () => {
+    expect(SALON_ROLES).toEqual(['owner', 'reception', 'staff', 'dev'])
   })
 
   it('le propriétaire lit et écrit toutes les ressources', () => {
@@ -13,6 +13,14 @@ describe('matrice RBAC', () => {
       expect(canReadResource('owner', resource)).toBe(true)
       expect(canWriteResource('owner', resource)).toBe(true)
     }
+  })
+
+  it('le développeur plateforme lit et écrit toutes les ressources', () => {
+    for (const resource of ALL_RESOURCES) {
+      expect(canReadResource('dev', resource)).toBe(true)
+      expect(canWriteResource('dev', resource)).toBe(true)
+    }
+    expect(canSeeRevenue('dev')).toBe(true)
   })
 
   it('la réception lit un périmètre quotidien précis', () => {
@@ -38,8 +46,9 @@ describe('matrice RBAC', () => {
     }
   })
 
-  it('le chiffre d’affaires est réservé au propriétaire', () => {
+  it('le chiffre d’affaires est réservé au propriétaire et au développement', () => {
     expect(canSeeRevenue('owner')).toBe(true)
+    expect(canSeeRevenue('dev')).toBe(true)
     expect(canSeeRevenue('reception')).toBe(false)
     expect(canSeeRevenue('staff' as SalonRole)).toBe(false)
   })

@@ -2,6 +2,8 @@
 import { KeyRound, ShieldCheck } from '@lucide/vue'
 import AdminResourceManager from '../../components/AdminResourceManager.vue'
 definePageMeta({layout:'admin',middleware:'admin'})
+const{data:session}=await useFetch<{role:string}>('/api/admin/session',{key:'admin-team-session'})
+const isDevSession=computed(()=>session.value?.role==='dev')
 const{data:serviceData}=await useFetch<{items:Array<{id:string;name:string;active:boolean}>}>('/api/admin/manage',{query:{resource:'services'},key:'admin-staff-services'})
 const{data:staffData,refresh:refreshStaff}=await useFetch<{items:Array<{id:string;firstName:string;lastName:string|null;active:boolean;userId:string|null}>}>('/api/admin/manage',{query:{resource:'staff'},key:'admin-team-staff'})
 const serviceOptions=computed(()=>serviceData.value?.items.filter((item)=>item.active).map((item)=>({label:item.name,value:item.id}))||[])
@@ -30,7 +32,7 @@ useSeoMeta({title:'Équipe — Administration',robots:'noindex,nofollow'})
   <p class="access-help">Créez le compte de connexion d’une employée ou d’une réceptionniste. Rôle <strong>Réception</strong> : agenda, clientes, paiements, messages (sans tarifs ni paramètres). Rôle <strong>Employé·e</strong> : agenda personnel sur /staff. Communiquez le mot de passe initial par un canal privé et demandez sa modification.</p>
   <form class="admin-form-grid access-form" @submit.prevent="createAccount">
     <label class="form-field"><span>Fiche employée *</span><select v-model="accountForm.staffId" class="form-control" required><option value="" disabled>Choisir une fiche sans accès</option><option v-for="option in linkableStaff" :key="option.value" :value="option.value">{{option.label}}</option></select></label>
-    <label class="form-field"><span>Rôle *</span><select v-model="accountForm.role" class="form-control"><option value="staff">Employé·e — agenda personnel</option><option value="reception">Réception — quotidien du salon</option></select></label>
+    <label class="form-field"><span>Rôle *</span><select v-model="accountForm.role" class="form-control"><option value="staff">Employé·e — agenda personnel</option><option value="reception">Réception — quotidien du salon</option><option v-if="isDevSession" value="owner">Propriétaire — réservé au développeur</option></select></label>
     <label class="form-field"><span>E-mail de connexion *</span><input v-model="accountForm.email" type="email" class="form-control" required maxlength="254" autocomplete="off"></label>
     <label class="form-field"><span>Mot de passe initial * (8 caractères minimum, 14 recommandés)</span><input v-model="accountForm.password" type="password" class="form-control" required minlength="8" maxlength="72" autocomplete="new-password"></label>
     <div class="wide access-actions"><button class="btn btn-primary" type="submit" :disabled="accountBusy||!accountForm.staffId">{{accountBusy?'Création…':'Créer l’accès'}}</button></div>

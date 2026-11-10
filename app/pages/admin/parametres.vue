@@ -7,10 +7,11 @@ const salonFields = [
   { key: 'name', label: 'Nom public', required: true },
   { key: 'description', label: 'Présentation', type: 'textarea' as const },
   { key: 'phone', label: 'Téléphone' },
-  { key: 'whatsapp', label: 'WhatsApp' },
+  { key: 'whatsapp', label: 'WhatsApp (format international, ex. 22997000000)' },
   { key: 'email', label: 'E-mail de contact' },
   { key: 'address', label: 'Adresse' },
   { key: 'city', label: 'Ville' },
+  { key: 'instagram', label: 'Instagram (pseudo ou lien complet)', help: 'Ces coordonnées alimentent automatiquement le site public : pied de page, page contact et liens WhatsApp « Réserver / Discuter ».' },
 ]
 
 const salonColumns = [

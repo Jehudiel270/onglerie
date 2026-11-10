@@ -20,7 +20,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:neon": "node scripts/migrate-neon.mjs",
     "db:check": "tsx scripts/check-db.ts",
-    "bootstrap:owner": "tsx scripts/bootstrap-owner.ts"
+    "bootstrap:owner": "tsx scripts/bootstrap-owner.ts",
+    "bootstrap:dev": "tsx scripts/bootstrap-dev.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.17",

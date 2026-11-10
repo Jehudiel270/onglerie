@@ -1,7 +1,7 @@
-import { and, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { createError, getHeader, getQuery, type H3Event } from 'h3'
 import { getDatabase } from '../db/client'
-import { salonMemberships } from '../db/schema'
+import { salonMemberships, salons } from '../db/schema'
 import { type SalonRole } from '../../shared/constants/rbac'
 
 export type { SalonRole }
@@ -15,6 +15,29 @@ export async function requireSalonRole(event: H3Event, allowedRoles: SalonRole[]
 
   const requestedSalonId = getHeader(event, 'x-salon-id') || String(getQuery(event).salonId || '')
   const db = getDatabase()
+
+  // Rôle plateforme « dev » : identifié au niveau du compte utilisateur
+  // (user.role = 'dev') et non par une adhésion salon. Le développeur·se
+  // contourne les adhésions et agit sur le salon demandé (en-tête x-salon-id)
+  // ou sur le premier salon actif de la plateforme.
+  if ((session.user as { role?: string }).role === 'dev') {
+    let salonId = ''
+    if (requestedSalonId) {
+      const [requested] = await db.select({ id: salons.id }).from(salons).where(eq(salons.id, requestedSalonId)).limit(1)
+      if (!requested) throw createError({ statusCode: 404, statusMessage: 'Salon demandé introuvable.' })
+      salonId = requested.id
+    } else {
+      const [active] = await db.select({ id: salons.id }).from(salons).where(eq(salons.status, 'active')).orderBy(asc(salons.createdAt)).limit(1)
+      if (active) salonId = active.id
+      else {
+        const [any] = await db.select({ id: salons.id }).from(salons).orderBy(asc(salons.createdAt)).limit(1)
+        if (!any) throw createError({ statusCode: 404, statusMessage: 'Aucun salon enregistré sur la plateforme.' })
+        salonId = any.id
+      }
+    }
+    return { db, user: session.user, salonId, role: 'dev' as SalonRole }
+  }
+
   const memberships = await db.select().from(salonMemberships).where(and(
     eq(salonMemberships.userId, session.user.id),
     eq(salonMemberships.active, true),

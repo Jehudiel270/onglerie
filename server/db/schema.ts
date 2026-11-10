@@ -40,7 +40,7 @@ export const verifications = pgTable('verification', {
 export const salons = pgTable('salons', {
   id: uuid('id').defaultRandom().primaryKey(), name: text('name').notNull(), slug: text('slug').notNull().unique(), description: text('description'),
   status: text('status').default('setup').notNull(), timezone: text('timezone').default('Africa/Porto-Novo').notNull(), currency: text('currency').default('XOF').notNull(),
-  phone: text('phone'), whatsapp: text('whatsapp'), email: text('email'), address: text('address'), city: text('city'), country: text('country').default('BJ').notNull(),
+  phone: text('phone'), whatsapp: text('whatsapp'), email: text('email'), address: text('address'), city: text('city'), instagram: text('instagram'), country: text('country').default('BJ').notNull(),
   createdAt: createdAt(), updatedAt: updatedAt(),
 })
 export const salonMemberships = pgTable('salon_memberships', {
