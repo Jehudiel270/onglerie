@@ -70,19 +70,19 @@ async function setActive(account: Account, membership: Account['memberships'][nu
 </script>
 <template>
   <div>
-    <div class="admin-page-head"><div><h1>Comptes &amp; accès</h1><p>Panneau du rôle développement : préparer, dépanner et transférer les accès de tous les salons.</p></div></div>
+    <div class="admin-page-head"><div><h1>Comptes &amp; accès</h1><p>Panneau du rôle développement : préparer, dépanner et transférer les accès du salon — et de ses futures succursales si besoin.</p></div></div>
 
     <div v-if="!isDevSession" class="admin-alert"><ShieldAlert :size="15" /> Section réservée au rôle développeur. Votre compte n’a pas ce niveau ; adressez-vous à l’équipe technique.</div>
 
     <template v-else>
       <section class="admin-card">
         <div class="admin-card__title"><h2><UserCog :size="18" /> Créer un accès</h2></div>
-        <p class="comptes-help">Un salon n’a qu’<strong>une seule gérante</strong> (elle voit tout et crée son équipe). La <strong>réception</strong> gère le quotidien sans le chiffre d’affaires ; elle peut être rattachée à une fiche praticienne si elle fait aussi des poses. L’<strong>employée</strong> doit être rattachée à sa fiche : elle ne voit que son agenda sur /staff. Les comptes développeurs ne se créent jamais ici, uniquement via le script serveur <code>bootstrap:dev</code>.</p>
+        <p class="comptes-help">Le salon n’a qu’<strong>une seule gérante</strong> : sa propriétaire, qui voit tout et crée son équipe. La <strong>réception</strong> gère le quotidien sans le chiffre d’affaires ; elle peut être rattachée à une fiche praticienne si elle fait aussi des poses. L’<strong>employée</strong> doit être rattachée à sa fiche : elle ne voit que son agenda sur /staff. Les comptes développeurs ne se créent jamais ici, uniquement via le script serveur <code>bootstrap:dev</code>.</p>
         <form class="admin-form-grid" @submit.prevent="submitCreate">
           <label class="form-field"><span>Nom complet *</span><input v-model="createForm.name" class="form-control" required maxlength="120" autocomplete="off"></label>
           <label class="form-field"><span>E-mail de connexion *</span><input v-model="createForm.email" type="email" class="form-control" required maxlength="254" autocomplete="off"></label>
           <label class="form-field"><span>Mot de passe initial * (14 caractères recommandés)</span><input v-model="createForm.password" type="password" class="form-control" required minlength="8" maxlength="72" autocomplete="new-password"></label>
-          <label class="form-field"><span>Rôle salon *</span><select v-model="createForm.role" class="form-control"><option value="owner">Gérante — une seule par salon</option><option value="reception">Réception — quotidien sans CA</option><option value="staff">Employée — agenda personnel</option></select></label>
+          <label class="form-field"><span>Rôle salon *</span><select v-model="createForm.role" class="form-control"><option value="owner">Gérante — la propriétaire (une seule)</option><option value="reception">Réception — quotidien sans CA</option><option value="staff">Employée — agenda personnel</option></select></label>
           <label v-if="needsProfile" class="form-field"><span>Fiche praticienne {{ createForm.role === 'staff' ? '*' : '(facultative — pratique des poses)' }}</span><select v-model="createForm.staffId" class="form-control" :required="createForm.role === 'staff'"><option value="" :disabled="createForm.role === 'staff'">{{ createForm.role === 'staff' ? 'Choisir une fiche sans accès' : 'Aucune fiche (bureau uniquement)' }}</option><option v-for="profile in profilesForRole" :key="profile.id" :value="profile.id">{{ profile.label }}</option></select></label>
           <div class="wide comptes-actions"><button class="btn btn-primary" type="submit" :disabled="createBusy || !createForm.name || !createForm.email || !createForm.password">{{ createBusy ? 'Création…' : 'Créer l’accès' }}</button></div>
           <p v-if="createOk" class="admin-success wide">{{ createOk }}</p>
@@ -125,7 +125,7 @@ async function setActive(account: Account, membership: Account['memberships'][nu
                       <span :class="['var-state', { 'is-ok': membership.active }]">{{ membership.active ? 'actif' : 'inactif' }}</span>
                     </div>
                   </template>
-                  <span v-else class="comptes-none">{{ account.platformRole === 'dev' ? 'Accès plateforme (tous les salons)' : account.platformRole === 'customer' ? 'Espace cliente uniquement' : 'Aucune adhésion salon' }}</span>
+                  <span v-else class="comptes-none">{{ account.platformRole === 'dev' ? 'Accès plateforme (compte développeur)' : account.platformRole === 'customer' ? 'Espace cliente uniquement' : 'Aucune adhésion salon' }}</span>
                 </td>
               </tr>
               <tr v-if="!accounts.length"><td colspan="4" class="admin-empty">Aucun compte ; la liste se remplit après la première création.</td></tr>

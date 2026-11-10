@@ -1,3 +1,0 @@
-{
-  "//": "Crons retirés : le plan Vercel Hobby limite à 1 exécution/jour. Les trois tâches (expire-holds, notifications, reminders) sont appelées par cron-job.org avec l'en-tête Authorization: Bearer <CRON_SECRET>. Voir docs/cron-job-org.md."
-}

@@ -14,7 +14,7 @@ Nuxt/Nitro est construit avec le preset `vercel`; la construction ne doit ni fai
 4. Déployer et vérifier l’endpoint `/api/health`, le formulaire, les pages publiques, le login, l’origine et les clés de fournisseur; vérifier les journaux FedaPay/Meta séparément.
 5. Ouvrir l’indexation uniquement après renseignements réels, examen légal, vraie origine et présence du sitemap.
 
-`vercel.json` déclare la libération des retenues chaque minute, le traitement de la file toutes les cinq minutes et les rappels toutes les quinze minutes. Vercel impose des limites de fréquence selon l’offre ; confirmer que le plan choisi permet ces intervalles avant de déployer ce calendrier, sinon utiliser un scheduler autorisant ces fréquences sans réduire silencieusement le temps de retenue. Les crons doivent inclure la variable `CRON_SECRET` côté runtime et utilisent l’autorisation Bearer attendue par Vercel. Limiter les logs du fournisseur et ne pas logguer le corps/client/numéro complet.
+Aucune tâche planifiée n'est déclarée dans Vercel : le fichier `vercel.json` a été retiré du dépôt (l'API Vercel refuse sa clé « // » et le plan Hobby limite les crons à une exécution par jour). La libération des retenues (toutes les 5 minutes), le traitement de la file de notifications (toutes les 5 minutes) et les rappels de rendez-vous (toutes les 15 minutes) sont appelés par cron-job.org — voir `docs/cron-job-org.md`. Chaque appel porte l'en-tête `Authorization: Bearer <CRON_SECRET>` ; garder `CRON_SECRET` côté runtime. Limiter les logs du fournisseur et ne pas logguer le corps/client/numéro complet.
 
 ## Branches et bascule
 

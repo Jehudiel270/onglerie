@@ -1,6 +1,6 @@
 # Plateforme de réservation d’onglerie — MVP
 
-Application Nuxt SSR en français pour un salon pilote au Bénin. Elle réunit une vitrine éditoriale interactive avec scène WebGL Three.js des couches d’une pose et progression GSAP ScrollTrigger, un catalogue, un portfolio de références, un parcours de réservation, un espace cliente et un tableau de bord privé. Le thème, le style des boutons, les icônes, le verre dépoli et la scène sont réglables par salon. Le nom, les coordonnées, les services, les photos et les règles du salon ne sont pas présumés : les exemples visibles en mode démo sont explicitement étiquetés.
+Application Nuxt SSR en français pour un salon pilote au Bénin. Elle réunit une vitrine éditoriale interactive avec scène WebGL Three.js des couches d’une pose et progression GSAP ScrollTrigger, un catalogue, un portfolio de références, un parcours de réservation, un espace cliente et un tableau de bord privé. Le thème, le style des boutons, les icônes, le verre dépoli et la scène sont réglables depuis les paramètres du salon. Le nom, les coordonnées, les services, les photos et les règles du salon ne sont pas présumés : les exemples visibles en mode démo sont explicitement étiquetés.
 
 ## Technologies
 

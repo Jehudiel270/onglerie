@@ -1,9 +1,10 @@
 # Tâches planifiées via cron-job.org (plan Vercel Hobby)
 
 Vercel Hobby n'autorise qu'un cron par jour. Les trois tâches de la plateforme
-ont donc été retirées de `vercel.json` et doivent être appelées par le service
-gratuit [cron-job.org](https://cron-job.org), qui permet une granularité à la
-minute.
+ne sont donc pas déclarées dans Vercel — le fichier `vercel.json` a été retiré
+du dépôt (l'API Vercel rejette sa clé de commentaire « // ») — et doivent être
+appelées par le service gratuit [cron-job.org](https://cron-job.org), qui
+permet une granularité à la minute.
 
 ## Endpoints à déclarer
 

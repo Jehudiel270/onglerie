@@ -25,9 +25,10 @@ async function createAccount(){
 }
 useSeoMeta({title:'Équipe — Administration',robots:'noindex,nofollow'})
 
-// Mode solo : rattacher SON compte à SA fiche praticienne. La fiche reste
-// réservable par les clientes ; la liaison ouvre en plus l'agenda personnel
-// /staff pour le compte connecté (gérante ou réception).
+// Mode solo : rattacher le compte de la propriétaire (ou de la réception) à SA
+// propre fiche praticienne. La fiche reste réservable par les clientes ; la
+// liaison ouvre en plus l'agenda personnel /staff pour le compte connecté.
+// Carte masquée pour une session dev : ce réglage appartient au salon.
 const myProfile=computed(()=>staffData.value?.items.find((item)=>item.userId===session.value?.user?.id)||null)
 const linkableToMe=computed(()=>staffData.value?.items.filter((item)=>item.active&&!item.userId)||[])
 const myLinkChoice=ref(''),linkBusy=ref(false),linkError=ref(''),linkOk=ref('')
@@ -41,13 +42,13 @@ async function unlinkMyProfile(){linkBusy.value=true;linkError.value='';linkOk.v
 <template><div>
 <AdminResourceManager resource="staff" title="Équipe" description="Profils, services maîtrisés et disponibilités des professionnelles." :fields="fields" :columns="columns"/>
 <section v-if="!isDevSession" class="admin-card access-card my-profile-card">
-  <div class="admin-card__title"><h2><HeartHandshake :size="18"/> Votre fiche praticienne</h2></div>
-  <p class="access-help">Vous pratiquez vous-même les poses&nbsp;? Liez votre compte à votre fiche&nbsp;: les clientes réservent avec vous, et votre agenda personnel devient disponible sur <strong>/staff</strong> (pratique sur téléphone). Délier ne supprime ni la fiche ni les rendez-vous.</p>
+  <div class="admin-card__title"><h2><HeartHandshake :size="18"/> Vous êtes aussi praticienne ?</h2></div>
+  <p class="access-help">Si c’est vous, la propriétaire, qui faites les poses au salon, rattachez votre compte à votre propre fiche&nbsp;: les clientes réserveront avec vous et votre agenda personnel sera disponible sur <strong>/staff</strong> (pratique sur téléphone). Si les poses sont plutôt faites par une employée, ne liez rien ici&nbsp;: créez plutôt son accès dans la section en dessous. Délier ne supprime ni la fiche ni les rendez-vous.</p>
   <div class="my-profile-body">
     <template v-if="myProfile"><span class="my-profile-current">Fiche liée&nbsp;: <strong>{{myProfile.firstName}} {{myProfile.lastName||''}}</strong></span><button class="btn btn-secondary" type="button" :disabled="linkBusy" @click="unlinkMyProfile">{{linkBusy?'…':'Délier ma fiche'}}</button></template>
     <template v-else>
       <select v-model="myLinkChoice" class="form-control my-profile-select"><option value="" disabled>Choisir votre fiche praticienne</option><option v-for="profile in linkableToMe" :key="profile.id" :value="profile.id">{{profile.firstName}} {{profile.lastName||''}}</option></select>
-      <button class="btn btn-primary" type="button" :disabled="linkBusy||!myLinkChoice" @click="linkMyProfile">{{linkBusy?'Liaison…':'C’est moi — lier cette fiche'}}</button>
+      <button class="btn btn-primary" type="button" :disabled="linkBusy||!myLinkChoice" @click="linkMyProfile">{{linkBusy?'Liaison…':'Lier cette fiche à mon compte'}}</button>
     </template>
     <p v-if="linkOk" class="admin-success">{{linkOk}}</p>
     <p v-if="linkError" class="admin-alert">{{linkError}}</p>
