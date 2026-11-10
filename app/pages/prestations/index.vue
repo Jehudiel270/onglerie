@@ -27,7 +27,7 @@ useSeoMeta({title,description,ogTitle:title,ogDescription:description,ogType:'we
         <label class="filter-control"><span>Catégorie</span><select v-model="category" class="form-control"><option v-for="item in categories" :key="item">{{item}}</option></select></label>
         <label class="filter-control"><span><ArrowUpDown :size="13"/> Trier par</span><select v-model="sort" class="form-control"><option value="recommended">Recommandées</option><option value="price-asc">Prix croissant</option><option value="duration-asc">Durée croissante</option></select></label>
       </div>
-      <div v-if="services.length" class="catalog-grid"><ServiceCard v-for="service in services" :key="service.id" :service="service" :demo="Boolean(catalog?.demo)"/></div>
+      <div v-if="services.length" v-reveal.stagger class="catalog-grid"><ServiceCard v-for="service in services" :key="service.id" :service="service" :demo="Boolean(catalog?.demo)"/></div>
       <div v-else class="empty-state"><strong>Aucune prestation à afficher.</strong><p>Essayez une autre recherche ou contactez le salon pour connaître son catalogue.</p><NuxtLink class="btn btn-secondary" to="/contact">Contacter le salon</NuxtLink></div>
     </div>
   </div>

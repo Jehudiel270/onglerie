@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: ['@nuxtjs/better-auth', 'shadcn-nuxt', '@vite-pwa/nuxt'],
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/motion.css'],
   vite: {
     plugins: [tailwindcss()],
   },
@@ -35,6 +35,9 @@ export default defineNuxtConfig({
     },
   },
   app: {
+    // Transition douce à chaque changement de page, sur le site public
+    // comme dans l'administration.
+    pageTransition: { name: 'page', mode: 'out-in' },
     head: {
       htmlAttrs: { lang: 'fr-BJ' },
       meta: [

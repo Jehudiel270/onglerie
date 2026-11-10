@@ -28,7 +28,7 @@ useHead(()=>({script:businessJsonLd.value?[{type:'application/ld+json',innerHTML
 
 <template>
   <div>
-    <section class="hero container-page">
+    <section v-reveal class="hero container-page">
       <div class="hero__copy">
         <span class="eyebrow">Un studio · Une pose pensée pour vous</span>
         <h1 class="display">La beauté des mains,<br><em>pensée pour vous.</em></h1>
@@ -44,18 +44,18 @@ useHead(()=>({script:businessJsonLd.value?[{type:'application/ld+json',innerHTML
       <a class="hero__scroll" href="#prestations" aria-label="Défiler vers les prestations"><span>FAITES DÉFILER</span><ArrowDown :size="14" /></a>
     </section>
 
-    <section v-if="catalog?.demo" class="container-page demo-banner" aria-label="Données de démonstration"><div><strong>Aperçu de démonstration</strong><span>Les tarifs sont indicatifs et les images ont été créées pour la maquette éditoriale. Rien ici ne représente une prestation réellement réalisée ou confirmée par le salon.</span></div><NuxtLink to="/contact">Personnaliser le salon <ArrowUpRight :size="14" /></NuxtLink></section>
+    <section v-if="catalog?.demo" v-reveal class="container-page demo-banner" aria-label="Données de démonstration"><div><strong>Aperçu de démonstration</strong><span>Les tarifs sont indicatifs et les images ont été créées pour la maquette éditoriale. Rien ici ne représente une prestation réellement réalisée ou confirmée par le salon.</span></div><NuxtLink to="/contact">Personnaliser le salon <ArrowUpRight :size="14" /></NuxtLink></section>
 
     <section v-if="appearance.nailExperienceEnabled" class="home-stage container-page"><NailStage :settings="appearance" /></section>
 
-    <section id="prestations" class="home-services container-page section-block">
+    <section v-reveal id="prestations" class="home-services container-page section-block">
       <div class="section-topline"><span class="section-kicker">Le rituel, à votre rythme</span><NuxtLink class="link-arrow" to="/prestations">Toutes les prestations <ArrowRight :size="15" /></NuxtLink></div>
       <div class="section-heading-row"><h2 class="section-heading">Un soin juste.<br><em>Votre signature.</em></h2><p class="section-copy">Parcourez les options, leurs durées et leurs tarifs. Les détails définitifs sont configurés par l’équipe du salon.</p></div>
       <div v-if="featuredServices.length" class="services-grid"><ServiceCard v-for="service in featuredServices" :key="service.id" :service="service" :demo="Boolean(catalog?.demo)" /></div>
       <div v-else class="empty-state"><strong>Les prestations arrivent ici.</strong><p>Le catalogue n’a pas encore été renseigné par l’équipe du salon.</p><NuxtLink class="link-arrow" to="/contact">Demander des informations <ArrowRight :size="15" /></NuxtLink></div>
     </section>
 
-    <section class="inspiration-section">
+    <section v-reveal class="inspiration-section">
       <div class="container-page inspiration-section__inner">
         <div class="section-topline"><span class="section-kicker">Couleurs · Formes · Finitions</span><NuxtLink class="link-arrow" to="/realisations">Toutes les inspirations <ArrowRight :size="15" /></NuxtLink></div>
         <div class="section-heading-row"><h2 class="section-heading">Un détail<br><em>qui change tout.</em></h2><p class="section-copy">Explorez des pistes de style, puis gardez une référence pour expliquer ce que vous aimez au moment du rendez-vous.</p></div>
@@ -64,12 +64,12 @@ useHead(()=>({script:businessJsonLd.value?[{type:'application/ld+json',innerHTML
       </div>
     </section>
 
-    <section class="home-clarity container-page">
+    <section v-reveal class="home-clarity container-page">
       <div class="home-clarity__title"><span class="eyebrow">Du premier clic au rendez-vous</span><h2 class="display">Tout est plus simple<br>quand tout est clair.</h2></div>
       <div class="clarity-points"><article><b>01</b><h3>Choisissez votre pose</h3><p>Comparez les prestations, les durées et le prix indiqué par le salon.</p></article><article><b>02</b><h3>Gardez une référence</h3><p>Ajoutez une inspiration publiée à votre demande pour guider l’échange.</p></article><article><b>03</b><h3>Réservez en confiance</h3><p>Le calendrier ne propose que les créneaux calculés à partir des horaires configurés.</p></article></div>
     </section>
 
-    <section class="home-cta container-page"><div class="home-cta__content"><span class="eyebrow">Le prochain détail vous attend</span><h2 class="display">Votre moment.<br><em>Votre manière.</em></h2><p>Commencez par choisir ce qui vous ressemble.</p><NuxtLink class="btn btn-light" to="/reservation">Explorer les créneaux <ArrowRight :size="16" /></NuxtLink></div><span class="home-cta__mark" aria-hidden="true">N°01</span></section>
+    <section v-reveal class="home-cta container-page"><div class="home-cta__content"><span class="eyebrow">Le prochain détail vous attend</span><h2 class="display">Votre moment.<br><em>Votre manière.</em></h2><p>Commencez par choisir ce qui vous ressemble.</p><NuxtLink class="btn btn-light" to="/reservation">Explorer les créneaux <ArrowRight :size="16" /></NuxtLink></div><span class="home-cta__mark" aria-hidden="true">N°01</span></section>
   </div>
 </template>
 

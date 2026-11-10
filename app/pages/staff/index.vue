@@ -37,7 +37,7 @@ useSeoMeta({ title: 'Mon agenda — Espace équipe', robots: 'noindex,nofollow' 
     <p v-if="actionOk" class="staff-ok">{{actionOk}}</p>
     <p v-if="actionError" class="staff-alert">{{actionError}}</p>
 
-    <section class="staff-block"><h2><CalendarDays :size="16"/> Aujourd’hui</h2>
+    <section v-reveal class="staff-block"><h2><CalendarDays :size="16"/> Aujourd’hui</h2>
       <p v-if="!agenda?.today.length" class="staff-empty">Aucun rendez-vous aujourd’hui.</p>
       <article v-for="item in agenda?.today||[]" :key="item.id" class="staff-card">
         <div class="staff-card__time"><strong>{{timeLabel(item.startsAt)}}</strong><small>→ {{timeLabel(item.endsAt)}}</small></div>
@@ -49,12 +49,12 @@ useSeoMeta({ title: 'Mon agenda — Espace équipe', robots: 'noindex,nofollow' 
       </article>
     </section>
 
-    <section class="staff-block"><h2><Clock :size="16"/> À venir</h2>
+    <section v-reveal class="staff-block"><h2><Clock :size="16"/> À venir</h2>
       <p v-if="!agenda?.upcoming.length" class="staff-empty">Rien de planifié ensuite.</p>
       <article v-for="item in agenda?.upcoming||[]" :key="item.id" class="staff-card"><div class="staff-card__time"><strong>{{dayLabel(item.startsAt)}}</strong><small>{{timeLabel(item.startsAt)}}</small></div><div class="staff-card__body"><strong class="staff-card__client">{{item.customer}}</strong><ul><li v-for="service in item.services" :key="service.name">{{service.name}} · {{service.durationMinutes}} min</li></ul></div><div class="staff-card__actions"><span :class="['staff-badge',`is-${item.status}`]">{{statusLabel(item.status)}}</span></div></article>
     </section>
 
-    <section class="staff-block"><h2>7 derniers jours</h2>
+    <section v-reveal class="staff-block"><h2>7 derniers jours</h2>
       <p v-if="!agenda?.past.length" class="staff-empty">Pas d’historique récent.</p>
       <article v-for="item in agenda?.past||[]" :key="item.id" class="staff-card is-past"><div class="staff-card__time"><strong>{{dayLabel(item.startsAt)}}</strong><small>{{timeLabel(item.startsAt)}}</small></div><div class="staff-card__body"><strong class="staff-card__client">{{item.customer}}</strong><ul><li v-for="service in item.services" :key="service.name">{{service.name}}</li></ul></div><div class="staff-card__actions"><span :class="['staff-badge',`is-${item.status}`]">{{statusLabel(item.status)}}</span></div></article>
     </section>

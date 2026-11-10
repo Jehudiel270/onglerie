@@ -24,7 +24,7 @@ useSeoMeta({ title: 'Récupérer une réservation', description: 'Récupération
 
 <template>
   <div class="container-page recovery-page">
-    <section class="recovery-card surface-card">
+    <section v-reveal class="recovery-card surface-card">
       <div class="recovery-mark"><ShieldCheck :size="22"/></div>
       <span class="eyebrow">Accès invité</span>
       <h1 class="display">Retrouver votre<br><em>rendez-vous.</em></h1>
