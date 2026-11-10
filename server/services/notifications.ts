@@ -26,7 +26,7 @@ async function sendEmail(row: OutboxRow) {
   // ; l'expéditeur doit être validé dans le compte Brevo (expéditeurs & domaines).
   if (brevoKey && from) {
     const message = messageFor(row)
-    const fromName = (await getPlatformSetting('EMAIL_FROM_NAME')).value || 'Onglerie Carrel'
+    const fromName = (await getPlatformSetting('EMAIL_FROM_NAME')).value || 'Votre onglerie'
     const response = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': brevoKey, 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ sender: { email: from, name: fromName }, to: [{ email: row.recipient }], subject: message.subject, textContent: message.body, htmlContent: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#2b2422">${safe(message.body).replace(/\n/g, '<br>')}</div>` }), signal: AbortSignal.timeout(20_000) })
     if (!response.ok) throw new Error(`Brevo a refusé l'e-mail (HTTP ${response.status}).`)
     return

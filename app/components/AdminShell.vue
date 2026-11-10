@@ -11,7 +11,7 @@ const{data:session}=await useFetch<{user:{name:string;email:string};role:string;
 const visibleItems=computed(()=>{const role=session.value?.role as SalonRole|undefined;if(!role)return items;if(role==='dev')return items;return items.filter((item)=>item.roles.includes(role))})
 const activeTitle=computed(()=>items.find((item)=>item.to===route.path)?.label||'Gestion du salon')
 const config=useRuntimeConfig()
-const salonName=computed(()=>String(session.value?.salonName||config.public.siteName||'Onglerie Carrel'))
+const salonName=computed(()=>String(session.value?.salonName||config.public.siteName||'Votre onglerie'))
 const roleLabel=computed(()=>({owner:'Propriétaire',reception:'Réception',staff:'Employé·e',dev:'Développeur'}[session.value?.role||'']||'accès salon'))
 async function logout(){try{await $fetch('/api/auth/sign-out',{method:'POST'})}finally{await navigateTo('/connexion')}}
 // Sélecteur « Salon actif » : visible pour le développeur (tous les salons de

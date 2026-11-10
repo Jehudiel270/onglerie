@@ -51,10 +51,12 @@ const safe = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&':
 
 export async function sendLoginOtpEmail(recipient: string, code: string): Promise<void> {
   const [brevoKey, from] = await Promise.all([getPlatformSetting('BREVO_API_KEY'), getPlatformSetting('EMAIL_FROM')])
-  const subject = 'Code de connexion — Onglerie Carrel'
+  // Aucun nom figé : l'expéditeur (et donc l'objet du message) suit la
+  // configuration plateforme (variable d'environnement ou panneau dev).
+  const fromName = (await getPlatformSetting('EMAIL_FROM_NAME')).value || 'Votre onglerie'
+  const subject = `Code de connexion — ${fromName}`
   const body = `Votre code de connexion est ${code}. Il expire dans ${CODE_TTL_MINUTES} minutes et ne peut être utilisé qu'une seule fois. Ne le communiquez à personne.`
   if (brevoKey.value && from.value) {
-    const fromName = (await getPlatformSetting('EMAIL_FROM_NAME')).value || 'Onglerie Carrel'
     const response = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': brevoKey.value, 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ sender: { email: from.value, name: fromName }, to: [{ email: recipient }], subject, textContent: body, htmlContent: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#2b2422"><p style="font-size:22px;letter-spacing:6px;font-weight:700">${code}</p>${safe(body)}</div>` }), signal: AbortSignal.timeout(20_000) })
     if (!response.ok) throw new Error(`Brevo a refusé l'e-mail de vérification (HTTP ${response.status}).`)
     return

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ArrowUpRight, CalendarDays, LogOut, Scissors } from '@lucide/vue'
 const route = useRoute()
+const config = useRuntimeConfig()
 const { data: session } = await useFetch<{ user: { name: string; email: string }; role: string; staffProfile: { firstName: string } | null }>('/api/staff/session', { key: 'staff-session', default: () => null as never })
 async function logout(){try{await $fetch('/api/auth/sign-out',{method:'POST'})}finally{await navigateTo('/connexion')}}
 const roleLabel = computed(() => ({ owner: 'Propriétaire', reception: 'Réception', staff: 'Employé·e' }[session.value?.role ?? 'staff'] ?? 'Équipe'))
 </script>
-<template><div class="staff-shell"><header class="staff-topbar"><div class="staff-brand"><span class="staff-brand__mark"><Scissors :size="18"/></span><div><strong>Espace équipe</strong><small>Onglerie Carrel</small></div></div><nav class="staff-nav" aria-label="Navigation équipe"><NuxtLink to="/staff" :class="['staff-nav__link',{'is-active':route.path==='/staff'}]"><CalendarDays :size="16"/><span>Mon agenda</span></NuxtLink></nav><div class="staff-user"><span class="staff-user__info"><strong>{{session?.user?.name||'Équipe'}}</strong><small>{{roleLabel}}</small></span><button class="staff-logout" @click="logout"><LogOut :size="15"/><span>Quitter</span></button><NuxtLink class="staff-back" to="/"><ArrowUpRight :size="13"/> Site public</NuxtLink></div></header><main class="staff-main"><slot/></main></div></template>
+<template><div class="staff-shell"><header class="staff-topbar"><div class="staff-brand"><span class="staff-brand__mark"><Scissors :size="18"/></span><div><strong>Espace équipe</strong><small>{{ config.public.siteName || 'Votre onglerie' }}</small></div></div><nav class="staff-nav" aria-label="Navigation équipe"><NuxtLink to="/staff" :class="['staff-nav__link',{'is-active':route.path==='/staff'}]"><CalendarDays :size="16"/><span>Mon agenda</span></NuxtLink></nav><div class="staff-user"><span class="staff-user__info"><strong>{{session?.user?.name||'Équipe'}}</strong><small>{{roleLabel}}</small></span><button class="staff-logout" @click="logout"><LogOut :size="15"/><span>Quitter</span></button><NuxtLink class="staff-back" to="/"><ArrowUpRight :size="13"/> Site public</NuxtLink></div></header><main class="staff-main"><slot/></main></div></template>
 <style>
 .staff-shell{min-height:100vh;background:#f4f0eb;color:#2b2422;font-family:var(--font-sans)}
 .staff-topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:1rem;border-bottom:1px solid #e4dcd4;padding:.7rem 1.4rem;background:rgba(255,253,249,.95);backdrop-filter:blur(10px)}

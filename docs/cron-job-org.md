@@ -19,7 +19,7 @@ permet une granularité à la minute.
 1. Créez un compte gratuit puis **Cronjobs → Create cronjob**.
 2. **Title** : « Onglerie — expire-holds » (puis les deux autres).
 3. **URL** : collez l'URL du tableau ci-dessus (remplacez `VOTRE-DOMAINE` par
-   l'URL Vercel finale, ex. `https://onglerie-carrel.vercel.app`).
+   l'URL Vercel finale, ex. `https://votre-projet.vercel.app`).
 4. Onglet **Advanced** → **Header fields** → ajoutez :
    - Name : `Authorization`
    - Value : `Bearer <CRON_SECRET>` (la valeur de `CRON_SECRET` définie dans
